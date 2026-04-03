@@ -6,8 +6,8 @@ import PricingSection from "../components/landing/PricingSection";
 import FAQSection from "../components/landing/FAQSection";
 import Footer from "../components/landing/Footer";
 
-const HERO_IMAGE = "/__generating__/img_2c6ee077ca66.png";
-const MOTIVATION_IMAGE = "/__generating__/img_23acd683e57e.png";
+const HERO_IMAGE = "https://media.base44.com/images/public/69d007075b413b17add2cf30/7dca3c39f_generated_4a75b6ab.png";
+const MOTIVATION_IMAGE = "https://media.base44.com/images/public/69d007075b413b17add2cf30/adc736bdf_generated_be6c194d.png";
 
 export default function Landing() {
   return (
