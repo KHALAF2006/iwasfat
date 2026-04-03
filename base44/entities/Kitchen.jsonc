@@ -1,0 +1,47 @@
+{
+  "name": "Kitchen",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0627\u0633\u0645 \u0627\u0644\u0645\u0637\u0628\u062e (\u062e\u0644\u064a\u062c\u064a\u060c \u0645\u0635\u0631\u064a\u060c \u0644\u0628\u0646\u0627\u0646\u064a\u060c \u0625\u0644\u062e)"
+    },
+    "name_en": {
+      "type": "string",
+      "description": "English name"
+    },
+    "icon": {
+      "type": "string",
+      "description": "emoji or icon identifier"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0648\u0635\u0641 \u0627\u0644\u0645\u0637\u0628\u062e"
+    },
+    "region": {
+      "type": "string",
+      "enum": [
+        "gulf",
+        "levant",
+        "egypt",
+        "yemen",
+        "north_africa",
+        "iraq",
+        "palestine"
+      ],
+      "description": "\u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u062c\u063a\u0631\u0627\u0641\u064a\u0629"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "\u062a\u0631\u062a\u064a\u0628 \u0627\u0644\u0639\u0631\u0636"
+    }
+  },
+  "required": [
+    "name",
+    "icon"
+  ]
+}

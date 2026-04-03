@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import AppLayout from './components/app/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Meals from './pages/Meals';
+import ShoppingList from './pages/ShoppingList';
 import Scanner from './pages/Scanner';
 import Progress from './pages/Progress';
 import Content from './pages/Content';
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/meals" element={<Meals />} />
+        <Route path="/shopping" element={<ShoppingList />} />
         <Route path="/scanner" element={<Scanner />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/content" element={<Content />} />
