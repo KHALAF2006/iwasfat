@@ -1,0 +1,97 @@
+{
+  "name": "MealPlan",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0627\u0633\u0645 \u0627\u0644\u062e\u0637\u0629"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0648\u0635\u0641 \u0627\u0644\u062e\u0637\u0629"
+    },
+    "daily_calorie_target": {
+      "type": "number",
+      "description": "\u0647\u062f\u0641 \u0627\u0644\u0633\u0639\u0631\u0627\u062a \u0627\u0644\u064a\u0648\u0645\u064a\u0629"
+    },
+    "plan_type": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "moderate",
+        "maintenance",
+        "active_male"
+      ],
+      "description": "\u0646\u0648\u0639 \u0627\u0644\u062e\u0637\u0629"
+    },
+    "week_number": {
+      "type": "number",
+      "description": "\u0631\u0642\u0645 \u0627\u0644\u0623\u0633\u0628\u0648\u0639"
+    },
+    "assigned_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u0627\u0644\u0645\u062c\u0645\u0648\u0639\u0627\u062a \u0627\u0644\u0645\u0639\u064a\u0646\u0629"
+    },
+    "meals": {
+      "type": "array",
+      "description": "\u0627\u0644\u0648\u062c\u0628\u0627\u062a \u0627\u0644\u064a\u0648\u0645\u064a\u0629",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "number",
+            "description": "\u0631\u0642\u0645 \u0627\u0644\u064a\u0648\u0645 (1-7)"
+          },
+          "breakfast": {
+            "type": "string",
+            "description": "\u0627\u0644\u0641\u0637\u0648\u0631"
+          },
+          "breakfast_calories": {
+            "type": "number"
+          },
+          "breakfast_image": {
+            "type": "string"
+          },
+          "lunch": {
+            "type": "string",
+            "description": "\u0627\u0644\u063a\u062f\u0627\u0621"
+          },
+          "lunch_calories": {
+            "type": "number"
+          },
+          "lunch_image": {
+            "type": "string"
+          },
+          "dinner": {
+            "type": "string",
+            "description": "\u0627\u0644\u0639\u0634\u0627\u0621"
+          },
+          "dinner_calories": {
+            "type": "number"
+          },
+          "dinner_image": {
+            "type": "string"
+          },
+          "snack": {
+            "type": "string",
+            "description": "\u0627\u0644\u0633\u0646\u0627\u0643"
+          },
+          "snack_calories": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "daily_calorie_target"
+  ]
+}

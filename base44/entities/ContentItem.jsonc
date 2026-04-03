@@ -1,0 +1,85 @@
+{
+  "name": "ContentItem",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "\u0627\u0644\u0639\u0646\u0648\u0627\u0646"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0627\u0644\u0648\u0635\u0641"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "video",
+        "image",
+        "infographic",
+        "pdf"
+      ],
+      "description": "\u0646\u0648\u0639 \u0627\u0644\u0645\u062d\u062a\u0648\u0649"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "nutrition",
+        "exercise",
+        "shopping",
+        "appetite",
+        "motivation",
+        "general"
+      ],
+      "description": "\u0627\u0644\u0641\u0626\u0629"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "\u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0644\u0641"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "\u0631\u0627\u0628\u0637 \u0627\u0644\u0641\u064a\u062f\u064a\u0648"
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "\u0635\u0648\u0631\u0629 \u0645\u0635\u063a\u0631\u0629"
+    },
+    "target_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u0627\u0644\u0645\u062c\u0645\u0648\u0639\u0627\u062a \u0627\u0644\u0645\u0633\u062a\u0647\u062f\u0641\u0629"
+    },
+    "target_all": {
+      "type": "boolean",
+      "default": true,
+      "description": "\u0644\u0644\u062c\u0645\u064a\u0639"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0646\u0634\u0631"
+    },
+    "day_number": {
+      "type": "number",
+      "description": "\u0631\u0642\u0645 \u0627\u0644\u064a\u0648\u0645 \u0641\u064a \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062c"
+    },
+    "week_number": {
+      "type": "number",
+      "description": "\u0631\u0642\u0645 \u0627\u0644\u0623\u0633\u0628\u0648\u0639"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": false
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "\u0645\u062f\u0629 \u0627\u0644\u0641\u064a\u062f\u064a\u0648 \u0628\u0627\u0644\u062f\u0642\u0627\u0626\u0642"
+    }
+  },
+  "required": [
+    "title",
+    "content_type"
+  ]
+}
