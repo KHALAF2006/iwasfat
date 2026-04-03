@@ -1,0 +1,70 @@
+{
+  "name": "Drink",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0628 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+    },
+    "name_en": {
+      "type": "string",
+      "description": "English name"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0648\u0635\u0641 \u0627\u0644\u0645\u0634\u0631\u0648\u0628"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "hot",
+        "cold",
+        "juice",
+        "healthy",
+        "forbidden"
+      ],
+      "description": "\u0641\u0626\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0628"
+    },
+    "serving_size": {
+      "type": "string",
+      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629 (\u0643\u0648\u0628\u060c \u0643\u0648\u0628 \u0635\u063a\u064a\u0631\u060c \u0625\u0644\u062e)"
+    },
+    "serving_ml": {
+      "type": "number",
+      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629 \u0628\u0627\u0644\u0645\u064a\u0644\u064a \u0644\u062a\u0631"
+    },
+    "calories": {
+      "type": "number",
+      "description": "\u0627\u0644\u0633\u0639\u0631\u0627\u062a \u0627\u0644\u062d\u0631\u0627\u0631\u064a\u0629"
+    },
+    "protein": {
+      "type": "number",
+      "description": "\u0627\u0644\u0628\u0631\u0648\u062a\u064a\u0646 \u0628\u0627\u0644\u063a\u0631\u0627\u0645"
+    },
+    "carbs": {
+      "type": "number",
+      "description": "\u0627\u0644\u0643\u0631\u0628\u0648\u0647\u064a\u062f\u0631\u0627\u062a \u0628\u0627\u0644\u063a\u0631\u0627\u0645"
+    },
+    "fat": {
+      "type": "number",
+      "description": "\u0627\u0644\u062f\u0647\u0648\u0646 \u0628\u0627\u0644\u063a\u0631\u0627\u0645"
+    },
+    "dietary_notes": {
+      "type": "string",
+      "description": "\u0645\u0644\u0627\u062d\u0638\u0627\u062a \u063a\u0630\u0627\u0626\u064a\u0629"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0628"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "false \u0644\u0644\u0645\u0634\u0631\u0648\u0628\u0627\u062a \u0627\u0644\u0645\u0645\u0646\u0648\u0639\u0629"
+    }
+  },
+  "required": [
+    "name",
+    "calories"
+  ]
+}

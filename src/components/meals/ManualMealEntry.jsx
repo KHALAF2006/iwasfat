@@ -37,7 +37,7 @@ export default function ManualMealEntry({ isOpen, onClose, onSubmit }) {
       size_selected: quantity || 'حصة واحدة',
       quantity_details: {
         quantity,
-        cooking_method
+        cookingMethod
       }
     });
 

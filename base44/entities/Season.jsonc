@@ -1,0 +1,38 @@
+{
+  "name": "Season",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0627\u0633\u0645 \u0627\u0644\u0641\u0635\u0644"
+    },
+    "season_key": {
+      "type": "string",
+      "enum": [
+        "all",
+        "spring",
+        "summer",
+        "autumn",
+        "winter",
+        "ramadan"
+      ],
+      "description": "\u0645\u0641\u062a\u0627\u062d \u0627\u0644\u0641\u0635\u0644"
+    },
+    "months": {
+      "type": "string",
+      "description": "\u0627\u0644\u0623\u0634\u0647\u0631 (1-12 \u0645\u0641\u0635\u0648\u0644\u0629 \u0628\u0641\u0648\u0627\u0635\u0644\u060c \u0623\u0648 'variable' \u0644\u0631\u0645\u0636\u0627\u0646)"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0648\u0635\u0641 \u0627\u0644\u0641\u0635\u0644"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "season_key"
+  ]
+}
