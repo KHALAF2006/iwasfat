@@ -5,6 +5,7 @@ import TestimonialsSection from "../components/landing/TestimonialsSection";
 import PricingSection from "../components/landing/PricingSection";
 import FAQSection from "../components/landing/FAQSection";
 import Footer from "../components/landing/Footer";
+import Navbar from "../components/landing/Navbar";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/69d007075b413b17add2cf30/7dca3c39f_generated_4a75b6ab.png";
 const MOTIVATION_IMAGE = "https://media.base44.com/images/public/69d007075b413b17add2cf30/adc736bdf_generated_be6c194d.png";
@@ -12,6 +13,7 @@ const MOTIVATION_IMAGE = "https://media.base44.com/images/public/69d007075b413b1
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       <HeroSection heroImage={HERO_IMAGE} />
       <HowItWorks />
       <FeaturesSection motivationImage={MOTIVATION_IMAGE} />
