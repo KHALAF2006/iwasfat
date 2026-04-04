@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 const benefits = [
   "خطة وجبات يومية مخصصة",
@@ -18,25 +17,16 @@ export default function PricingSection() {
   return (
     <section id="pricing" className="py-24 px-6 bg-background">
       <div className="max-w-4xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
+        <div className="mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             خطة واحدة — كل شيء
           </h2>
-          <p className="text-muted-foreground text-lg mb-12 max-w-md mx-auto">
+          <p className="text-muted-foreground text-lg max-w-md mx-auto">
             اشتراك شهري بسيط يمنحك كل الأدوات التي تحتاجها
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="bg-card rounded-3xl border border-border/50 shadow-xl overflow-hidden max-w-lg mx-auto"
-        >
+        <div className="bg-card rounded-3xl border border-border/50 shadow-xl overflow-hidden max-w-lg mx-auto">
           <div className="bg-primary p-8">
             <p className="text-primary-foreground/70 text-sm mb-2">الاشتراك الشهري</p>
             <div className="flex items-baseline justify-center gap-2">
@@ -68,7 +58,7 @@ export default function PricingSection() {
               يمكنك الإلغاء في أي وقت خلال الفترة التجريبية
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

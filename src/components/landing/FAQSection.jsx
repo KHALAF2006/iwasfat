@@ -1,5 +1,4 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { motion } from "framer-motion";
 
 const faqs = [
   { q: "هل المحتوى باللغة العربية؟", a: "نعم، كل المحتوى والخطط والتطبيق بالكامل باللغة العربية." },
@@ -15,16 +14,11 @@ export default function FAQSection() {
   return (
     <section id="faq" className="py-24 px-6 bg-secondary/30">
       <div className="max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             أسئلة شائعة
           </h2>
-        </motion.div>
+        </div>
 
         <Accordion type="single" collapsible className="space-y-3">
           {faqs.map((faq, i) => (

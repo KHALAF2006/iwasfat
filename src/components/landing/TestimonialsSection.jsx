@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Star, TrendingDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -12,37 +11,27 @@ export default function TestimonialsSection() {
   const displayed = testimonials.filter(t => t.is_featured).slice(0, 3);
   const list = displayed.length >= 3 ? displayed : testimonials.slice(0, 3);
 
-  // Stats summary
   const totalLost = testimonials.reduce((s, t) => s + (t.weight_lost || 0), 0);
   const avgWeeks = testimonials.length
     ? Math.round(testimonials.reduce((s, t) => s + (t.duration_weeks || 0), 0) / testimonials.length)
     : 0;
 
+  if (list.length === 0) return null;
+
   return (
     <section className="py-24 px-6 bg-background">
       <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-6"
-        >
+        <div className="text-center mb-6">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             قصص نجاح حقيقية
           </h2>
           <p className="text-muted-foreground text-lg">
             مشتركون حققوا أهدافهم معنا
           </p>
-        </motion.div>
+        </div>
 
-        {/* Stats Bar */}
         {testimonials.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-wrap justify-center gap-8 mb-16"
-          >
+          <div className="flex flex-wrap justify-center gap-8 mb-16">
             <div className="text-center">
               <p className="text-3xl font-bold text-accent">{testimonials.length}+</p>
               <p className="text-sm text-muted-foreground">قصة نجاح</p>
@@ -55,17 +44,13 @@ export default function TestimonialsSection() {
               <p className="text-3xl font-bold text-accent">{avgWeeks}</p>
               <p className="text-sm text-muted-foreground">أسبوع متوسط البرنامج</p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         <div className="grid md:grid-cols-3 gap-8">
           {list.map((t, i) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
+            <div
+              key={t.id || i}
               className="bg-card rounded-2xl border border-border/50 p-8 hover:shadow-lg transition-shadow flex flex-col"
             >
               <div className="flex gap-1 mb-4">
@@ -90,7 +75,7 @@ export default function TestimonialsSection() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
