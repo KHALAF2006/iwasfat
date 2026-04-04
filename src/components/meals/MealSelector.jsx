@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import MealWarnings from './MealWarnings';
 
 export default function MealSelector({ kitchenId, mealType, onSelectMeal }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
@@ -118,6 +119,7 @@ export default function MealSelector({ kitchenId, mealType, onSelectMeal }) {
                 </div>
               </div>
             )}
+            <MealWarnings meal={selectedMeal} />
           </div>
         </CardContent>
       </Card>

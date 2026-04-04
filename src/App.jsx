@@ -28,6 +28,9 @@ import AdminSubscribers from './pages/admin/AdminSubscribers';
 import AdminGroups from './pages/admin/AdminGroups';
 import AdminMeals from './pages/admin/AdminMeals';
 import AdminContent from './pages/admin/AdminContent';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
+import AdminMealItems from './pages/admin/AdminMealItems';
+import AdminKitchens from './pages/admin/AdminKitchens';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -73,6 +76,9 @@ const AuthenticatedApp = () => {
         <Route path="/admin/groups" element={<AdminGroups />} />
         <Route path="/admin/meals" element={<AdminMeals />} />
         <Route path="/admin/content" element={<AdminContent />} />
+        <Route path="/admin/testimonials" element={<AdminTestimonials />} />
+        <Route path="/admin/meal-items" element={<AdminMealItems />} />
+        <Route path="/admin/kitchens" element={<AdminKitchens />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
