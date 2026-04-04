@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function HeroSection({ heroImage }) {
   return (
-    <section className="relative h-screen flex items-center overflow-hidden">
+    <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden" style={{marginTop: '-64px', paddingTop: '64px'}}>
       {/* Background image */}
       <div className="absolute inset-0">
         <img
