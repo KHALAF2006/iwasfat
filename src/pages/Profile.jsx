@@ -12,7 +12,7 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState(null);
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -20,10 +20,9 @@ export default function Profile() {
       const subs = await base44.entities.Subscriber.filter({ created_by: (await base44.auth.me()).email });
       return subs[0] || null;
     },
-    onSuccess: (data) => {
-      if (data) setForm({ height_cm: data.height_cm, target_weight: data.target_weight });
-    },
   });
+
+
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Subscriber.update(subscriber.id, data),
@@ -122,11 +121,14 @@ export default function Profile() {
       <div className="bg-card rounded-2xl border border-border/50 p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground">تعديل البيانات</h3>
-          <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)}>
+          <Button variant="ghost" size="sm" onClick={() => {
+            if (!editing) setForm({ height_cm: subscriber.height_cm, target_weight: subscriber.target_weight });
+            setEditing(!editing);
+          }}>
             {editing ? "إلغاء" : "تعديل"}
           </Button>
         </div>
-        {editing && (
+        {editing && form && (
           <div className="space-y-3">
             <div>
               <Label>الطول (سم)</Label>
