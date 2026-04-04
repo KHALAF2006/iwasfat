@@ -31,6 +31,7 @@ import AdminContent from './pages/admin/AdminContent';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminMealItems from './pages/admin/AdminMealItems';
 import AdminKitchens from './pages/admin/AdminKitchens';
+import AdminDailyPlans from './pages/admin/AdminDailyPlans';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin/content" element={<AdminContent />} />
         <Route path="/admin/testimonials" element={<AdminTestimonials />} />
         <Route path="/admin/meal-items" element={<AdminMealItems />} />
+        <Route path="/admin/daily-plans" element={<AdminDailyPlans />} />
         <Route path="/admin/kitchens" element={<AdminKitchens />} />
       </Route>
 

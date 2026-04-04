@@ -1,10 +1,11 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderOpen, Utensils, Video, Star, ChefHat, UtensilsCrossed } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Utensils, Video, Star, ChefHat, UtensilsCrossed, CalendarDays } from "lucide-react";
 
 const navItems = [
   { path: "/admin", icon: LayoutDashboard, label: "لوحة التحكم" },
   { path: "/admin/subscribers", icon: Users, label: "المشتركون" },
   { path: "/admin/groups", icon: FolderOpen, label: "المجموعات" },
+  { path: "/admin/daily-plans", icon: CalendarDays, label: "الخطط اليومية" },
   { path: "/admin/kitchens", icon: UtensilsCrossed, label: "المطابخ" },
   { path: "/admin/meal-items", icon: ChefHat, label: "الوجبات" },
   { path: "/admin/meals", icon: Utensils, label: "خطط الوجبات" },
