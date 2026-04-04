@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, Edit2, Loader2 } from "lucide-react";
+import { Search, Edit2, Loader2, UserPlus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 export default function AdminSubscribers() {
@@ -14,6 +14,8 @@ export default function AdminSubscribers() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [editGroup, setEditGroup] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const { data: subscribers = [] } = useQuery({
     queryKey: ["allSubscribers"],
@@ -33,6 +35,14 @@ export default function AdminSubscribers() {
     },
   });
 
+  const handleInvite = async () => {
+    if (!inviteEmail) return;
+    setInviteLoading(true);
+    await base44.users.inviteUser(inviteEmail, "user");
+    setInviteEmail("");
+    setInviteLoading(false);
+  };
+
   const filtered = subscribers.filter(s => {
     const matchSearch = !search || s.full_name?.includes(search) || s.email?.includes(search);
     const matchStatus = statusFilter === "all" || s.subscription_status === statusFilter;
@@ -41,7 +51,23 @@ export default function AdminSubscribers() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-foreground mb-6">إدارة المشتركين</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+        <h1 className="text-3xl font-bold text-foreground">إدارة المشتركين</h1>
+        <div className="flex gap-2">
+          <Input
+            value={inviteEmail}
+            onChange={e => setInviteEmail(e.target.value)}
+            placeholder="ايميل المشترك الجديد"
+            className="w-52"
+            dir="ltr"
+            onKeyDown={e => e.key === "Enter" && handleInvite()}
+          />
+          <Button onClick={handleInvite} disabled={inviteLoading || !inviteEmail} className="gap-1 whitespace-nowrap">
+            {inviteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            دعوة
+          </Button>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
