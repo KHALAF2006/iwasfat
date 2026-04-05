@@ -5,13 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TrendingDown, Droplets, Target, Loader2 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { Plus, Loader2 } from "lucide-react";
 import moment from "moment";
+import WeightChart from "@/components/progress/WeightChart";
+import MoodEnergyChart from "@/components/progress/MoodEnergyChart";
+import WaterChart from "@/components/progress/WaterChart";
+import ProgressStats from "@/components/progress/ProgressStats";
+
+const PERIODS = [
+  { key: "week", label: "أسبوع" },
+  { key: "month", label: "شهر" },
+  { key: "3months", label: "3 أشهر" },
+  { key: "all", label: "الكل" },
+];
 
 export default function Progress() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [period, setPeriod] = useState("month");
+  const [activeChart, setActiveChart] = useState("weight");
   const [weight, setWeight] = useState("");
   const [energy, setEnergy] = useState(3);
   const [mood, setMood] = useState(3);
@@ -26,7 +38,7 @@ export default function Progress() {
   });
 
   const { data: weightLogs = [] } = useQuery({
-    queryKey: ["weightLogs"],
+    queryKey: ["weightLogs", subscriber?.id],
     queryFn: () => base44.entities.WeightLog.filter({ subscriber_id: subscriber?.id }, "date"),
     enabled: !!subscriber,
   });
@@ -37,6 +49,7 @@ export default function Progress() {
       queryClient.invalidateQueries({ queryKey: ["weightLogs"] });
       setOpen(false);
       setWeight("");
+      setWater("");
     },
   });
 
@@ -51,27 +64,54 @@ export default function Progress() {
     });
   };
 
-  const startWeight = subscriber?.current_weight || 0;
-  const targetWeight = subscriber?.target_weight || 0;
-  const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : startWeight;
-  const totalLost = startWeight - currentWeight;
-  const remaining = currentWeight - targetWeight;
+  // Filter by period
+  const filterByPeriod = (logs) => {
+    const now = moment();
+    return logs.filter(log => {
+      const d = moment(log.date);
+      if (period === "week") return d.isAfter(now.clone().subtract(7, "days"));
+      if (period === "month") return d.isAfter(now.clone().subtract(30, "days"));
+      if (period === "3months") return d.isAfter(now.clone().subtract(90, "days"));
+      return true;
+    });
+  };
 
-  const chartData = weightLogs.map(log => ({
-    date: moment(log.date).format("MM/DD"),
-    weight: log.weight,
+  const filtered = filterByPeriod(weightLogs);
+
+  const formatDate = (log) => {
+    if (period === "week") return moment(log.date).format("ddd DD");
+    if (period === "month") return moment(log.date).format("DD/MM");
+    return moment(log.date).format("MMM YY");
+  };
+
+  const weightData = filtered.map(log => ({ date: formatDate(log), weight: log.weight }));
+  const moodData = filtered.filter(l => l.energy_level || l.mood_level).map(log => ({
+    date: formatDate(log),
+    energy: log.energy_level || 0,
+    mood: log.mood_level || 0,
+  }));
+  const waterData = filtered.filter(l => l.water_cups).map(log => ({
+    date: formatDate(log),
+    water: log.water_cups,
   }));
 
+  const CHARTS = [
+    { key: "weight", label: "⚖️ الوزن" },
+    { key: "mood", label: "😊 الطاقة والمزاج" },
+    { key: "water", label: "💧 الماء" },
+  ];
+
   return (
-    <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 pt-6 pb-20 max-w-lg mx-auto space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">تتبع التقدم</h1>
-          <p className="text-muted-foreground text-sm">تابع رحلتك نحو هدفك</p>
+          <p className="text-muted-foreground text-sm">رحلتك نحو هدفك</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-primary text-primary-foreground gap-1">
+            <Button size="sm" className="gap-1">
               <Plus className="w-4 h-4" /> تسجيل
             </Button>
           </DialogTrigger>
@@ -98,7 +138,7 @@ export default function Progress() {
                 <Label>المزاج</Label>
                 <div className="flex gap-2 mt-1.5">
                   {["😞", "😐", "🙂", "😊", "🤩"].map((emoji, i) => (
-                    <button key={i} onClick={() => setMood(i + 1)} className={`w-10 h-10 rounded-lg text-lg transition-all ${i + 1 <= mood ? "scale-110 bg-secondary" : "opacity-40"}`}>
+                    <button key={i} onClick={() => setMood(i + 1)} className={`w-10 h-10 rounded-lg text-lg transition-all ${i + 1 === mood ? "scale-110 bg-secondary ring-2 ring-primary" : "opacity-50"}`}>
                       {emoji}
                     </button>
                   ))}
@@ -106,9 +146,9 @@ export default function Progress() {
               </div>
               <div>
                 <Label>أكواب الماء اليوم</Label>
-                <Input type="number" value={water} onChange={e => setWater(e.target.value)} className="mt-1.5" dir="ltr" />
+                <Input type="number" value={water} onChange={e => setWater(e.target.value)} className="mt-1.5" dir="ltr" placeholder="مثال: 8" />
               </div>
-              <Button onClick={handleSave} disabled={!weight || saveMutation.isPending} className="w-full bg-primary text-primary-foreground py-5">
+              <Button onClick={handleSave} disabled={!weight || saveMutation.isPending} className="w-full py-5">
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ"}
               </Button>
             </div>
@@ -116,62 +156,78 @@ export default function Progress() {
         </Dialog>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
-          <TrendingDown className="w-5 h-5 text-primary mx-auto mb-1" />
-          <p className="text-2xl font-bold text-foreground">{totalLost.toFixed(1)}</p>
-          <p className="text-xs text-muted-foreground">كغ فقدت</p>
-        </div>
-        <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
-          <Target className="w-5 h-5 text-accent mx-auto mb-1" />
-          <p className="text-2xl font-bold text-foreground">{remaining.toFixed(1)}</p>
-          <p className="text-xs text-muted-foreground">كغ متبقية</p>
-        </div>
-        <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
-          <Droplets className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-          <p className="text-2xl font-bold text-foreground">{currentWeight}</p>
-          <p className="text-xs text-muted-foreground">الوزن الحالي</p>
-        </div>
+      {/* Stats */}
+      <ProgressStats subscriber={subscriber} weightLogs={weightLogs} />
+
+      {/* Period Selector */}
+      <div className="flex gap-2 bg-secondary rounded-2xl p-1">
+        {PERIODS.map(p => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key)}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${period === p.key ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
-      {/* Chart */}
-      <div className="bg-card rounded-2xl border border-border/50 p-5 mb-6">
-        <h3 className="font-semibold text-foreground mb-4">منحنى الوزن</h3>
-        {chartData.length > 1 ? (
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis domain={["auto", "auto"]} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-              <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: "hsl(var(--primary))", r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-            سجّل وزنك بانتظام لرؤية الرسم البياني
-          </div>
+      {/* Chart Tabs */}
+      <div className="flex gap-2">
+        {CHARTS.map(c => (
+          <button
+            key={c.key}
+            onClick={() => setActiveChart(c.key)}
+            className={`flex-1 py-2 px-1 rounded-xl text-xs font-medium border transition-all ${activeChart === c.key ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Chart Card */}
+      <div className="bg-card rounded-2xl border border-border/50 p-5">
+        {activeChart === "weight" && (
+          <>
+            <h3 className="font-semibold text-foreground mb-4">منحنى الوزن</h3>
+            <WeightChart data={weightData} targetWeight={subscriber?.target_weight} />
+          </>
+        )}
+        {activeChart === "mood" && (
+          <>
+            <h3 className="font-semibold text-foreground mb-4">الطاقة والمزاج</h3>
+            <MoodEnergyChart data={moodData} />
+          </>
+        )}
+        {activeChart === "water" && (
+          <>
+            <h3 className="font-semibold text-foreground mb-4">استهلاك الماء</h3>
+            <WaterChart data={waterData} />
+          </>
         )}
       </div>
 
-      {/* Weight Log History */}
+      {/* History */}
       <div className="bg-card rounded-2xl border border-border/50 p-5">
-        <h3 className="font-semibold text-foreground mb-4">سجل الوزن</h3>
-        {weightLogs.length > 0 ? (
+        <h3 className="font-semibold text-foreground mb-4">سجل القياسات ({filtered.length})</h3>
+        {filtered.length > 0 ? (
           <div className="space-y-3">
-            {[...weightLogs].reverse().slice(0, 10).map((log, i) => (
-              <div key={log.id} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{moment(log.date).format("DD/MM/YYYY")}</span>
-                <div className="flex items-center gap-3">
-                  {log.energy_level && <span className="text-xs">⚡{log.energy_level}</span>}
-                  <span className="font-bold text-foreground">{log.weight} كغ</span>
+            {[...filtered].reverse().slice(0, 15).map(log => (
+              <div key={log.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{moment(log.date).format("DD/MM/YYYY")}</p>
+                  <div className="flex gap-3 mt-0.5">
+                    {log.energy_level && <span className="text-xs text-muted-foreground">⚡ {log.energy_level}/5</span>}
+                    {log.mood_level && <span className="text-xs text-muted-foreground">😊 {log.mood_level}/5</span>}
+                    {log.water_cups && <span className="text-xs text-muted-foreground">💧 {log.water_cups}</span>}
+                  </div>
                 </div>
+                <span className="text-lg font-bold text-primary">{log.weight} كغ</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm text-center py-4">لا توجد تسجيلات بعد</p>
+          <p className="text-muted-foreground text-sm text-center py-4">لا توجد تسجيلات في هذه الفترة</p>
         )}
       </div>
     </div>
