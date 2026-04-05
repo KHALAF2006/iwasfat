@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft } from "lucide-react";
 import CalorieRing from "../components/app/CalorieRing";
+import StatsPanel from "../components/app/StatsPanel";
 import moment from "moment";
 
 export default function Dashboard() {
@@ -145,6 +146,9 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Stats Panel */}
+      {subscriber && <StatsPanel subscriberId={subscriber.id} />}
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 gap-3">
