@@ -125,10 +125,13 @@ export default function ShoppingList() {
       .map(([cat, items]) => `${cat}\n${items.map(i => `□ ${i}`).join('\n')}`)
       .join('\n\n');
 
-    navigator.share?.({
-      title: 'قائمة التسوق',
-      text: message,
-    }) || navigator.clipboard.writeText(message);
+    if (navigator.share) {
+      navigator.share({ title: 'قائمة التسوق', text: message }).catch(() => {
+        navigator.clipboard.writeText(message);
+      });
+    } else {
+      navigator.clipboard.writeText(message);
+    }
   };
 
   if (!shoppingList) {
