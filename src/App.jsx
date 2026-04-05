@@ -31,7 +31,9 @@ import AdminContent from './pages/admin/AdminContent';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminMealItems from './pages/admin/AdminMealItems';
 import AdminKitchens from './pages/admin/AdminKitchens';
+import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminDailyPlans from './pages/admin/AdminDailyPlans';
+import Exercise from './pages/Exercise';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +69,7 @@ const AuthenticatedApp = () => {
         <Route path="/progress" element={<Progress />} />
         <Route path="/content" element={<Content />} />
         <Route path="/group" element={<Group />} />
+        <Route path="/exercise" element={<Exercise />} />
       </Route>
       <Route path="/profile" element={<Profile />} />
 
@@ -81,6 +84,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin/meal-items" element={<AdminMealItems />} />
         <Route path="/admin/daily-plans" element={<AdminDailyPlans />} />
         <Route path="/admin/kitchens" element={<AdminKitchens />} />
+        <Route path="/admin/notifications" element={<AdminNotifications />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

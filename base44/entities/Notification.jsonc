@@ -1,0 +1,63 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "subscriber_id": {
+      "type": "string",
+      "description": "\u0645\u0639\u0631\u0641 \u0627\u0644\u0645\u0634\u062a\u0631\u0643 (null = \u0644\u0644\u062c\u0645\u064a\u0639)"
+    },
+    "title": {
+      "type": "string",
+      "description": "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0625\u0634\u0639\u0627\u0631"
+    },
+    "message": {
+      "type": "string",
+      "description": "\u0646\u0635 \u0627\u0644\u0625\u0634\u0639\u0627\u0631"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "meal_reminder",
+        "water_reminder",
+        "weight_checkin",
+        "admin_broadcast",
+        "motivation",
+        "shopping_reminder"
+      ],
+      "description": "\u0646\u0648\u0639 \u0627\u0644\u0625\u0634\u0639\u0627\u0631"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u0647\u0644 \u062a\u0645\u062a \u0627\u0644\u0642\u0631\u0627\u0621\u0629"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u0648\u0642\u062a \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0645\u062c\u062f\u0648\u0644"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u0648\u0642\u062a \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0641\u0639\u0644\u064a"
+    },
+    "target_all": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u0625\u0631\u0633\u0627\u0644 \u0644\u0644\u062c\u0645\u064a\u0639"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "\u0645\u0639\u0631\u0641 \u0627\u0644\u0645\u062c\u0645\u0648\u0639\u0629 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)"
+    },
+    "action_url": {
+      "type": "string",
+      "description": "\u0631\u0627\u0628\u0637 \u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0639\u0646\u062f \u0627\u0644\u0636\u063a\u0637"
+    }
+  },
+  "required": [
+    "title",
+    "message",
+    "type"
+  ]
+}

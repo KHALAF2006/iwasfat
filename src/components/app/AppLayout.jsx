@@ -1,13 +1,12 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, Utensils, ShoppingCart, Camera, BarChart3, BookOpen, Users } from "lucide-react";
+import { Home, Utensils, ShoppingCart, Camera, BarChart3, BookOpen, Users, Dumbbell } from "lucide-react";
 
 const navItems = [
   { path: "/dashboard", icon: Home, label: "الرئيسية" },
   { path: "/meals", icon: Utensils, label: "الوجبات" },
   { path: "/shopping", icon: ShoppingCart, label: "التسوق" },
-  { path: "/scanner", icon: Camera, label: "المسح" },
+  { path: "/exercise", icon: Dumbbell, label: "التمارين" },
   { path: "/progress", icon: BarChart3, label: "التقدم" },
-  { path: "/content", icon: BookOpen, label: "المحتوى" },
   { path: "/group", icon: Users, label: "مجموعتي" },
 ];
 

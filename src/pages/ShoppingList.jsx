@@ -4,9 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Share2, Trash2, RefreshCw, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Share2, Trash2, Sparkles, Loader2, FileDown, CheckCircle2, Circle } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -24,20 +23,20 @@ export default function ShoppingList() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState({ category: 'other', item_name: '', quantity: '' });
   const [generating, setGenerating] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: subscriber } = useQuery({
     queryKey: ['subscriber'],
     queryFn: async () => {
-      const subs = await base44.entities.Subscriber.filter({ 
-        created_by: (await base44.auth.me()).email 
-      });
+      const me = await base44.auth.me();
+      const subs = await base44.entities.Subscriber.filter({ created_by: me.email });
       return subs[0] || null;
     },
   });
 
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 6 }); // أحد
-  
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 6 });
+
   const { data: shoppingList } = useQuery({
     queryKey: ['shoppingList', subscriber?.id],
     queryFn: async () => {
@@ -51,28 +50,24 @@ export default function ShoppingList() {
     enabled: !!subscriber,
   });
 
-  const updateItemMutation = useMutation({
-    mutationFn: async (itemUpdate) => {
+  const toggleItemMutation = useMutation({
+    mutationFn: async (itemIndex) => {
       if (!shoppingList) return;
-      const updatedItems = shoppingList.items.map(item =>
-        item.item_name === itemUpdate.item_name ? { ...item, ...itemUpdate } : item
+      const updatedItems = shoppingList.items.map((item, idx) =>
+        idx === itemIndex ? { ...item, is_checked: !item.is_checked } : item
       );
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
   });
 
   const deleteItemMutation = useMutation({
-    mutationFn: async (itemName) => {
+    mutationFn: async (itemIndex) => {
       if (!shoppingList) return;
-      const updatedItems = shoppingList.items.filter(item => item.item_name !== itemName);
+      const updatedItems = shoppingList.items.filter((_, idx) => idx !== itemIndex);
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
   });
 
   const addItemMutation = useMutation({
@@ -80,13 +75,7 @@ export default function ShoppingList() {
       if (!shoppingList || !newItem.item_name || !newItem.quantity) return;
       const updatedItems = [
         ...shoppingList.items,
-        {
-          category: newItem.category,
-          item_name: newItem.item_name,
-          quantity: newItem.quantity,
-          is_checked: false,
-          notes: ''
-        }
+        { category: newItem.category, item_name: newItem.item_name, quantity: newItem.quantity, is_checked: false, notes: '' }
       ];
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
@@ -100,7 +89,6 @@ export default function ShoppingList() {
   const generateList = async () => {
     if (!subscriber) return;
     setGenerating(true);
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 6 });
     const weekStartStr = format(weekStart, 'yyyy-MM-dd');
     await base44.functions.invoke('generateShoppingList', {
       subscriber_id: subscriber.id,
@@ -110,28 +98,39 @@ export default function ShoppingList() {
     setGenerating(false);
   };
 
+  const exportPDF = async () => {
+    if (!shoppingList) return;
+    setExportingPDF(true);
+    const response = await base44.functions.invoke('exportShoppingPDF', {
+      shopping_list_id: shoppingList.id
+    });
+    // response.data is the PDF - but since it's binary we open via URL approach
+    // Instead we trigger download via fetch with auth
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `قائمة-التسوق-${shoppingList.week_start_date}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportingPDF(false);
+  };
+
   const shareList = () => {
     if (!shoppingList?.items) return;
-    const text = shoppingList.items
-      .sort((a, b) => (CATEGORIES[a.category]?.order || 999) - (CATEGORIES[b.category]?.order || 999))
-      .reduce((acc, item) => {
-        const category = CATEGORIES[item.category]?.label || item.category;
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(`${item.item_name} — ${item.quantity}`);
-        return acc;
-      }, {});
+    const grouped = shoppingList.items.reduce((acc, item) => {
+      const cat = CATEGORIES[item.category]?.label || item.category;
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(`${item.is_checked ? '✅' : '☐'} ${item.item_name} — ${item.quantity}`);
+      return acc;
+    }, {});
 
-    const message = Object.entries(text)
-      .map(([cat, items]) => `${cat}\n${items.map(i => `□ ${i}`).join('\n')}`)
+    const message = Object.entries(grouped)
+      .map(([cat, items]) => `${cat}\n${items.join('\n')}`)
       .join('\n\n');
 
-    if (navigator.share) {
-      navigator.share({ title: 'قائمة التسوق', text: message }).catch(() => {
-        navigator.clipboard.writeText(message);
-      });
-    } else {
-      navigator.clipboard.writeText(message);
-    }
+    navigator.clipboard.writeText(message);
+    alert('تم نسخ القائمة للحافظة');
   };
 
   if (!shoppingList) {
@@ -145,7 +144,7 @@ export default function ShoppingList() {
             <p className="text-muted-foreground mb-4">لا توجد قائمة تسوق حالياً</p>
             <Button onClick={generateList} disabled={generating || !subscriber} className="gap-2">
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              توليد قائمة تلقائياً
+              {generating ? 'جارٍ التوليد...' : 'توليد قائمة بالذكاء الاصطناعي'}
             </Button>
           </div>
         </div>
@@ -153,10 +152,10 @@ export default function ShoppingList() {
     );
   }
 
-  const groupedItems = shoppingList.items.reduce((acc, item) => {
-    const cat = item.category;
+  const groupedItems = shoppingList.items.reduce((acc, item, idx) => {
+    const cat = item.category || 'other';
     if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
+    acc[cat].push({ ...item, _index: idx });
     return acc;
   }, {});
 
@@ -166,6 +165,7 @@ export default function ShoppingList() {
 
   const checkedCount = shoppingList.items.filter(i => i.is_checked).length;
   const totalCount = shoppingList.items.length;
+  const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
   return (
     <div className="px-4 pt-6 pb-20 max-w-2xl mx-auto">
@@ -183,29 +183,34 @@ export default function ShoppingList() {
             <div>
               <p className="text-sm text-muted-foreground">تم التسوق</p>
               <p className="text-2xl font-bold">{checkedCount} من {totalCount}</p>
-            </div>
-            <div className="text-right">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-                <span className="text-xl font-bold">
-                  {totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0}%
-                </span>
+              <div className="mt-2 w-48 h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
+            </div>
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-secondary">
+              <span className="text-xl font-bold">{progress}%</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* الأزرار */}
-      <div className="flex gap-2 mb-6">
-        <Button onClick={() => setShowAddItem(true)} className="flex-1 gap-2">
+      <div className="flex gap-2 mb-6 flex-wrap">
+        <Button onClick={() => setShowAddItem(true)} className="flex-1 gap-2 min-w-[120px]">
           <Plus className="w-4 h-4" />
           إضافة منتج
         </Button>
-        <Button onClick={generateList} variant="outline" disabled={generating} className="flex-1 gap-2">
+        <Button onClick={generateList} variant="outline" disabled={generating} className="flex-1 gap-2 min-w-[120px]">
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          تحديث تلقائي
+          {generating ? 'جارٍ التوليد...' : 'تحديث بالذكاء الاصطناعي'}
         </Button>
-        <Button onClick={shareList} variant="outline" size="icon">
+        <Button onClick={exportPDF} variant="outline" disabled={exportingPDF} size="icon" title="تصدير PDF">
+          {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+        </Button>
+        <Button onClick={shareList} variant="outline" size="icon" title="مشاركة">
           <Share2 className="w-4 h-4" />
         </Button>
       </div>
@@ -217,23 +222,21 @@ export default function ShoppingList() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{CATEGORIES[categoryKey]?.label}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {groupedItems[categoryKey].map((item, idx) => (
-                <div 
-                  key={idx}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+            <CardContent className="space-y-1">
+              {groupedItems[categoryKey].map((item) => (
+                <div
+                  key={item._index}
+                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
+                    item.is_checked ? 'bg-primary/5' : 'hover:bg-secondary/50'
+                  }`}
+                  onClick={() => toggleItemMutation.mutate(item._index)}
                 >
-                  <Checkbox
-                    checked={item.is_checked}
-                    onCheckedChange={() => 
-                      updateItemMutation.mutate({
-                        item_name: item.item_name,
-                        is_checked: !item.is_checked
-                      })
-                    }
-                  />
-                  <div className="flex-1">
-                    <p className={`text-sm ${item.is_checked ? 'line-through text-muted-foreground' : ''}`}>
+                  {item.is_checked
+                    ? <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                    : <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  }
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${item.is_checked ? 'line-through text-muted-foreground' : ''}`}>
                       {item.item_name}
                     </p>
                     <p className="text-xs text-muted-foreground">{item.quantity}</p>
@@ -241,8 +244,8 @@ export default function ShoppingList() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => deleteItemMutation.mutate(item.item_name)}
-                    className="h-8 w-8 p-0"
+                    onClick={(e) => { e.stopPropagation(); deleteItemMutation.mutate(item._index); }}
+                    className="h-8 w-8 p-0 flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -262,10 +265,10 @@ export default function ShoppingList() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">الفئة</label>
-              <select 
+              <select
                 value={newItem.category}
                 onChange={e => setNewItem({ ...newItem, category: e.target.value })}
-                className="w-full mt-2 px-3 py-2 border border-border rounded-md"
+                className="w-full mt-2 px-3 py-2 border border-border rounded-md bg-background"
               >
                 {Object.entries(CATEGORIES).map(([key, val]) => (
                   <option key={key} value={key}>{val.label}</option>
@@ -277,7 +280,7 @@ export default function ShoppingList() {
               <Input
                 value={newItem.item_name}
                 onChange={e => setNewItem({ ...newItem, item_name: e.target.value })}
-                placeholder="مثل: دجاج مشوي"
+                placeholder="مثل: صدر دجاج"
                 className="mt-2"
               />
             </div>
@@ -286,11 +289,11 @@ export default function ShoppingList() {
               <Input
                 value={newItem.quantity}
                 onChange={e => setNewItem({ ...newItem, quantity: e.target.value })}
-                placeholder="مثل: 500غ أو 2 كيس"
+                placeholder="مثل: 500غ أو 2 كيلو"
                 className="mt-2"
               />
             </div>
-            <Button 
+            <Button
               onClick={() => addItemMutation.mutate()}
               disabled={addItemMutation.isPending || !newItem.item_name || !newItem.quantity}
               className="w-full"
