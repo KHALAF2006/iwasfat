@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Share2, Trash2, RefreshCw } from 'lucide-react';
-import { format, addDays, startOfWeek, isSameWeek } from 'date-fns';
+import { Plus, Share2, Trash2, RefreshCw, Sparkles, Loader2 } from 'lucide-react';
+import { format, addDays, startOfWeek } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 const CATEGORIES = {
@@ -23,6 +23,7 @@ const CATEGORIES = {
 export default function ShoppingList() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState({ category: 'other', item_name: '', quantity: '' });
+  const [generating, setGenerating] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: subscriber } = useQuery({
@@ -96,6 +97,19 @@ export default function ShoppingList() {
     },
   });
 
+  const generateList = async () => {
+    if (!subscriber) return;
+    setGenerating(true);
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 6 });
+    const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+    await base44.functions.invoke('generateShoppingList', {
+      subscriber_id: subscriber.id,
+      week_start_date: weekStartStr
+    });
+    queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+    setGenerating(false);
+  };
+
   const shareList = () => {
     if (!shoppingList?.items) return;
     const text = shoppingList.items
@@ -119,10 +133,18 @@ export default function ShoppingList() {
 
   if (!shoppingList) {
     return (
-      <div className="flex items-center justify-center h-96 text-center">
-        <div>
-          <p className="text-muted-foreground">لا توجد قائمة تسوق حالياً</p>
-          <p className="text-sm text-muted-foreground mt-2">أضف وجباتك أولاً لإنشاء قائمة تسوق</p>
+      <div className="px-4 pt-6 pb-20 max-w-2xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-foreground">قائمة التسوق</h1>
+        </div>
+        <div className="flex items-center justify-center h-64 text-center">
+          <div>
+            <p className="text-muted-foreground mb-4">لا توجد قائمة تسوق حالياً</p>
+            <Button onClick={generateList} disabled={generating || !subscriber} className="gap-2">
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              توليد قائمة تلقائياً
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -176,9 +198,12 @@ export default function ShoppingList() {
           <Plus className="w-4 h-4" />
           إضافة منتج
         </Button>
-        <Button onClick={shareList} variant="outline" className="flex-1 gap-2">
+        <Button onClick={generateList} variant="outline" disabled={generating} className="flex-1 gap-2">
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          تحديث تلقائي
+        </Button>
+        <Button onClick={shareList} variant="outline" size="icon">
           <Share2 className="w-4 h-4" />
-          مشاركة
         </Button>
       </div>
 
