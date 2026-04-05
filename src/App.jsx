@@ -34,6 +34,8 @@ import AdminKitchens from './pages/admin/AdminKitchens';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminDailyPlans from './pages/admin/AdminDailyPlans';
 import Exercise from './pages/Exercise';
+import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +72,8 @@ const AuthenticatedApp = () => {
         <Route path="/content" element={<Content />} />
         <Route path="/group" element={<Group />} />
         <Route path="/exercise" element={<Exercise />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/notifications" element={<Notifications />} />
       </Route>
       <Route path="/profile" element={<Profile />} />
 

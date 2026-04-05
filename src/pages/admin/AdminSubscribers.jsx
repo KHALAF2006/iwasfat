@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Edit2, Loader2, UserPlus } from "lucide-react";
+import { Search, Edit2, Loader2, UserPlus, Download } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 export default function AdminSubscribers() {
@@ -16,6 +16,20 @@ export default function AdminSubscribers() {
   const [editGroup, setEditGroup] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
+
+  const exportPDF = async () => {
+    setExportingPDF(true);
+    const response = await base44.functions.invoke('exportSubscribersPDF', {});
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير-المشتركين-${new Date().toLocaleDateString('ar-SA').replace(/\//g, '-')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportingPDF(false);
+  };
 
   const { data: subscribers = [] } = useQuery({
     queryKey: ["allSubscribers"],
@@ -54,6 +68,10 @@ export default function AdminSubscribers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <h1 className="text-3xl font-bold text-foreground">إدارة المشتركين</h1>
         <div className="flex gap-2">
+          <Button onClick={exportPDF} disabled={exportingPDF} variant="outline" className="gap-2 whitespace-nowrap">
+            {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            تصدير PDF
+          </Button>
           <Input
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}

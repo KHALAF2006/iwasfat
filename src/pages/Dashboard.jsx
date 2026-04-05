@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft } from "lucide-react";
+import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft, Bell, ShoppingCart, Dumbbell, Settings, Camera } from "lucide-react";
 import CalorieRing from "../components/app/CalorieRing";
 import StatsPanel from "../components/app/StatsPanel";
 import moment from "moment";
@@ -20,6 +20,12 @@ export default function Dashboard() {
       const subs = await base44.entities.Subscriber.filter({ created_by: (await base44.auth.me()).email });
       return subs[0] || null;
     },
+  });
+
+  const { data: unreadNotifs = [] } = useQuery({
+    queryKey: ["unreadNotifs", subscriber?.id],
+    queryFn: () => base44.entities.Notification.filter({ subscriber_id: subscriber?.id, is_read: false }),
+    enabled: !!subscriber,
   });
 
   const today = moment().format("YYYY-MM-DD");
@@ -55,9 +61,13 @@ export default function Dashboard() {
 
   const quickLinks = [
     { icon: Utensils, label: "خطة وجباتي", path: "/meals", color: "bg-primary/10 text-primary" },
-    { icon: Video, label: "المحتوى الجديد", path: "/content", color: "bg-accent/10 text-accent" },
-    { icon: Users, label: "مجموعتي", path: "/group", color: "bg-primary/10 text-primary" },
-    { icon: BarChart3, label: "تقدمي", path: "/progress", color: "bg-accent/10 text-accent" },
+    { icon: ShoppingCart, label: "قائمة التسوق", path: "/shopping", color: "bg-accent/10 text-accent" },
+    { icon: Dumbbell, label: "تسجيل تمرين", path: "/exercise", color: "bg-primary/10 text-primary" },
+    { icon: BarChart3, label: "تتبع التقدم", path: "/progress", color: "bg-accent/10 text-accent" },
+    { icon: Video, label: "المحتوى", path: "/content", color: "bg-primary/10 text-primary" },
+    { icon: Users, label: "مجموعتي", path: "/group", color: "bg-accent/10 text-accent" },
+    { icon: Camera, label: "تحليل وجبة", path: "/scanner", color: "bg-primary/10 text-primary" },
+    { icon: Settings, label: "الإعدادات", path: "/settings", color: "bg-accent/10 text-accent" },
   ];
 
   return (
@@ -70,13 +80,25 @@ export default function Dashboard() {
           </h1>
           <p className="text-muted-foreground text-sm">{dayName}، {dateStr}</p>
         </div>
-        <Link to="/profile">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">
-              {subscriber?.full_name?.[0] || "م"}
-            </span>
-          </div>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/notifications" className="relative">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+            </div>
+            {unreadNotifs.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadNotifs.length > 9 ? "9+" : unreadNotifs.length}
+              </span>
+            )}
+          </Link>
+          <Link to="/profile">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">
+                {subscriber?.full_name?.[0] || "م"}
+              </span>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Calorie Ring */}
