@@ -3,23 +3,23 @@ import { Check, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const benefits = [
-  "خطة وجبات يومية مخصصة",
-  "تحليل وجبات بالذكاء الاصطناعي",
-  "مجموعة دعم خاصة",
-  "محتوى تعليمي أسبوعي",
-  "متابعة من خبير تغذية",
-  "تتبع الوزن والتقدم",
-  "ملخص أسبوعي تلقائي",
-  "حاسبة الوزن المثالي و BMI",
-];
+"خطة وجبات يومية مخصصة",
+"تحليل وجبات بالذكاء الاصطناعي",
+"مجموعة دعم خاصة",
+"محتوى تعليمي أسبوعي",
+"متابعة من خبير تغذية",
+"تتبع الوزن والتقدم",
+"ملخص أسبوعي تلقائي",
+"حاسبة الوزن المثالي و BMI"];
+
 
 export default function PricingSection() {
   return (
     <section id="pricing" className="py-24 px-6 bg-background">
       <div className="max-w-4xl mx-auto text-center">
         <div className="mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            خطة واحدة — كل شيء
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">خطة واحدة — كل شيءffff
+
           </h2>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
             اشتراك شهري بسيط يمنحك كل الأدوات التي تحتاجها
@@ -38,14 +38,14 @@ export default function PricingSection() {
 
           <div className="p-8">
             <ul className="space-y-4 text-right mb-8">
-              {benefits.map((b, i) => (
-                <li key={i} className="flex items-center gap-3">
+              {benefits.map((b, i) =>
+              <li key={i} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-primary" />
                   </div>
                   <span className="text-foreground">{b}</span>
                 </li>
-              ))}
+              )}
             </ul>
 
             <Link to="/register">
@@ -60,6 +60,6 @@ export default function PricingSection() {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
