@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { useT } from "@/i18n";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -17,10 +18,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function MoodEnergyChart({ data }) {
+  const t = useT();
+
   if (!data || data.length < 2) {
     return (
       <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">
-        سجّل بياناتك لرؤية التحليل
+        {t("components.charts.logToSee")}
       </div>
     );
   }
@@ -33,8 +36,8 @@ export default function MoodEnergyChart({ data }) {
         <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={20} />
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="energy" name="الطاقة" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="mood" name="المزاج" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="energy" name={t("components.charts.energy")} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="mood" name={t("components.charts.mood")} fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

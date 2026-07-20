@@ -12,7 +12,10 @@ import { Plus, Utensils, Edit2, Trash2, Loader2 } from "lucide-react";
 const DAY_NAMES = ["", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const PLAN_TYPES = { beginner: "خطة البداية", moderate: "خطة التخفيف", maintenance: "خطة الصيانة", active_male: "خطة الرجل النشيط" };
 
+import { useT } from "@/i18n";
+
 export default function AdminMeals() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -72,7 +75,7 @@ export default function AdminMeals() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-foreground">خطط الوجبات</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.meals')}</h1>
         <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="bg-primary text-primary-foreground gap-1"><Plus className="w-4 h-4" /> خطة جديدة</Button>

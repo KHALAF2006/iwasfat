@@ -1,0 +1,55 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "subscriber_id": {
+      "type": "string",
+      "description": "معرف المشترك"
+    },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "معرف جلسة الدفع في Stripe (checkout session)"
+    },
+    "stripe_invoice_id": {
+      "type": "string",
+      "description": "معرف الفاتورة في Stripe"
+    },
+    "amount": {
+      "type": "number",
+      "description": "المبلغ المدفوع"
+    },
+    "currency": {
+      "type": "string",
+      "default": "SAR",
+      "description": "العملة"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "failed",
+        "refunded"
+      ],
+      "description": "حالة الدفعة"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "بداية فترة الاشتراك المدفوعة"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "نهاية فترة الاشتراك المدفوعة"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "وقت تسجيل الدفعة"
+    }
+  },
+  "required": [
+    "subscriber_id",
+    "status"
+  ]
+}

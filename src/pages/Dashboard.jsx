@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft, Bell, ShoppingCart, Dumbbell, Settings, Camera } from "lucide-react";
+import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft, Bell, ShoppingCart, Dumbbell, Settings, Camera, Plus } from "lucide-react";
 import CalorieRing from "../components/app/CalorieRing";
 import StatsPanel from "../components/app/StatsPanel";
 import moment from "moment";
+import { useT, useLanguage } from "@/i18n";
+import { suggestDailyTargets, calculateWaterGoal } from "@/lib/nutrition/engine";
+import { buildEngineProfile } from "../components/meals/conditions";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
-  
-  useEffect(() => {
-    base44.auth.me().then(setUser);
-  }, []);
+  const t = useT();
+  const { language } = useLanguage();
+  const queryClient = useQueryClient();
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -52,23 +52,62 @@ export default function Dashboard() {
   });
 
   const totalCalories = todayLogs.reduce((sum, log) => sum + (log.calories || 0), 0);
-  const totalWater = todayLogs.reduce((sum, log) => sum + (log.water_cups || 0), 0);
-  const calorieTarget = subscriber?.daily_calorie_target || 1500;
+
+  // Engine-driven targets (safe floors, activity, chronic conditions),
+  // falling back to the values stored on the subscriber / plan entities.
+  const profile = buildEngineProfile(subscriber);
+  const engineTargets = profile ? suggestDailyTargets(profile) : null;
+  const calorieTarget =
+    engineTargets?.target_calories || subscriber?.daily_calorie_target || 1500;
+  const waterGoal =
+    (profile ? calculateWaterGoal(profile).cups : null) ||
+    dailyPlan?.water_cups_goal ||
+    8;
+  // Single source of truth for water: DailyMealPlan.water_cups_consumed.
+  const totalWater = dailyPlan?.water_cups_consumed || 0;
   const currentWeight = latestWeight?.weight || subscriber?.current_weight;
 
-  const dayName = new Intl.DateTimeFormat("ar-SA", { weekday: "long" }).format(new Date());
-  const dateStr = new Intl.DateTimeFormat("ar-SA", { day: "numeric", month: "long" }).format(new Date());
+  const addWaterMutation = useMutation({
+    mutationFn: async () => {
+      if (!dailyPlan) {
+        await base44.entities.DailyMealPlan.create({
+          subscriber_id: subscriber.id,
+          date: today,
+          water_cups_goal: waterGoal,
+          water_cups_consumed: 1,
+        });
+        return;
+      }
+      await base44.entities.DailyMealPlan.update(dailyPlan.id, {
+        water_cups_consumed: Math.min(totalWater + 1, waterGoal),
+      });
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["dailyPlan", subscriber?.id, today] }),
+  });
+
+  const locale = language === "ar" ? "ar-SA" : "en-US";
+  const dayName = new Intl.DateTimeFormat(locale, { weekday: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(new Date());
+
+  const firstName = subscriber?.full_name?.split(" ")[0];
 
   const quickLinks = [
-    { icon: Utensils, label: "خطة وجباتي", path: "/meals", color: "bg-primary/10 text-primary" },
-    { icon: ShoppingCart, label: "قائمة التسوق", path: "/shopping", color: "bg-accent/10 text-accent" },
-    { icon: Dumbbell, label: "تسجيل تمرين", path: "/exercise", color: "bg-primary/10 text-primary" },
-    { icon: BarChart3, label: "تتبع التقدم", path: "/progress", color: "bg-accent/10 text-accent" },
-    { icon: Video, label: "المحتوى", path: "/content", color: "bg-primary/10 text-primary" },
-    { icon: Users, label: "مجموعتي", path: "/group", color: "bg-accent/10 text-accent" },
-    { icon: Camera, label: "تحليل وجبة", path: "/scanner", color: "bg-primary/10 text-primary" },
-    { icon: Settings, label: "الإعدادات", path: "/settings", color: "bg-accent/10 text-accent" },
+    { icon: Utensils, label: t("dashboard.quickLinks.meals"), path: "/meals", color: "bg-primary/10 text-primary" },
+    { icon: ShoppingCart, label: t("dashboard.quickLinks.shopping"), path: "/shopping", color: "bg-accent/10 text-accent" },
+    { icon: Dumbbell, label: t("dashboard.quickLinks.exercise"), path: "/exercise", color: "bg-primary/10 text-primary" },
+    { icon: BarChart3, label: t("dashboard.quickLinks.progress"), path: "/progress", color: "bg-accent/10 text-accent" },
+    { icon: Video, label: t("dashboard.quickLinks.content"), path: "/content", color: "bg-primary/10 text-primary" },
+    { icon: Users, label: t("dashboard.quickLinks.group"), path: "/group", color: "bg-accent/10 text-accent" },
+    { icon: Camera, label: t("dashboard.quickLinks.scanner"), path: "/scanner", color: "bg-primary/10 text-primary" },
+    { icon: Settings, label: t("dashboard.quickLinks.settings"), path: "/settings", color: "bg-accent/10 text-accent" },
   ];
+
+  const planMeals = dailyPlan ? [
+    { key: "breakfast", emoji: "🌅", name: dailyPlan.breakfast_meal_name, cal: dailyPlan.breakfast_calories, done: dailyPlan.breakfast_completed },
+    { key: "lunch", emoji: "☀️", name: dailyPlan.lunch_meal_name, cal: dailyPlan.lunch_calories, done: dailyPlan.lunch_completed },
+    { key: "dinner", emoji: "🌙", name: dailyPlan.dinner_meal_name, cal: dailyPlan.dinner_calories, done: dailyPlan.dinner_completed },
+  ].filter(m => m.name) : [];
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
@@ -76,7 +115,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            أهلاً {subscriber?.full_name?.split(" ")[0] || "بك"} 👋
+            {firstName ? t("dashboard.greeting", { name: firstName }) : t("dashboard.greetingFallback")}
           </h1>
           <p className="text-muted-foreground text-sm">{dayName}، {dateStr}</p>
         </div>
@@ -94,7 +133,7 @@ export default function Dashboard() {
           <Link to="/profile">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <span className="text-primary font-bold text-sm">
-                {subscriber?.full_name?.[0] || "م"}
+                {subscriber?.full_name?.[0] || "👤"}
               </span>
             </div>
           </Link>
@@ -106,62 +145,68 @@ export default function Dashboard() {
         <CalorieRing consumed={totalCalories} target={calorieTarget} weight={currentWeight} />
         <div className="flex gap-8 mt-4">
           <div className="text-center">
-            <p className="text-xs text-muted-foreground">المتبقي</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.remaining")}</p>
             <p className="font-bold text-primary">{Math.max(0, calorieTarget - totalCalories)}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-muted-foreground">الهدف</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.goal")}</p>
             <p className="font-bold text-foreground">{calorieTarget}</p>
           </div>
-          <div className="text-center flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => subscriber && addWaterMutation.mutate()}
+            disabled={!subscriber || addWaterMutation.isPending || totalWater >= waterGoal}
+            className="text-center flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-secondary transition-colors disabled:opacity-60"
+            title={t("components.tracker.addWater")}
+          >
             <Droplets className="w-3 h-3 text-blue-500" />
             <div>
-              <p className="text-xs text-muted-foreground">ماء</p>
-              <p className="font-bold text-foreground">{totalWater} كوب</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.water")}</p>
+              <p className="font-bold text-foreground flex items-center gap-1">
+                {totalWater}/{waterGoal} {t("common.cup")}
+                <Plus className="w-3 h-3 text-blue-500" />
+              </p>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
       {/* Daily Meal Plan */}
       <div className="bg-card rounded-2xl border border-border/50 p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground">خطة وجبات اليوم</h3>
+          <h3 className="font-semibold text-foreground">{t("dashboard.todaysPlan")}</h3>
           <Link to="/meals" className="text-sm text-primary flex items-center gap-1">
-            التفاصيل <ArrowLeft className="w-3 h-3" />
+            {t("dashboard.details")} <ArrowLeft className="w-3 h-3 rtl:rotate-0 ltr:rotate-180" />
           </Link>
         </div>
         {dailyPlan ? (
           <div className="space-y-2">
-            {[
-              { key: "breakfast", label: "🌅 فطور", name: dailyPlan.breakfast_meal_name, cal: dailyPlan.breakfast_calories, done: dailyPlan.breakfast_completed },
-              { key: "lunch", label: "☀️ غداء", name: dailyPlan.lunch_meal_name, cal: dailyPlan.lunch_calories, done: dailyPlan.lunch_completed },
-              { key: "dinner", label: "🌙 عشاء", name: dailyPlan.dinner_meal_name, cal: dailyPlan.dinner_calories, done: dailyPlan.dinner_completed },
-            ].filter(m => m.name).map(m => (
-              <div key={m.key} className={`flex items-center justify-between p-3 rounded-xl ${m.done ? "bg-primary/5" : "bg-secondary/40"}`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{m.label.split(" ")[0]}</span>
-                  <div>
-                    <p className={`text-sm font-medium ${m.done ? "text-primary line-through" : "text-foreground"}`}>{m.name}</p>
-                    <p className="text-xs text-muted-foreground">{m.cal} سعرة</p>
+            {planMeals.map(m => (
+              <Link key={m.key} to={`/meals?log=${m.key}`} className="block">
+                <div className={`flex items-center justify-between p-3 rounded-xl transition-colors hover:ring-1 hover:ring-primary/40 ${m.done ? "bg-primary/5" : "bg-secondary/40"}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{m.emoji}</span>
+                    <div>
+                      <p className={`text-sm font-medium ${m.done ? "text-primary line-through" : "text-foreground"}`}>{m.name}</p>
+                      <p className="text-xs text-muted-foreground">{m.cal} {t("common.cal")}</p>
+                    </div>
                   </div>
+                  {m.done && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t("dashboard.done")}</span>}
                 </div>
-                {m.done && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">✓ تم</span>}
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-3">
             {["breakfast", "lunch", "dinner", "snack"].map(type => {
               const logged = todayLogs.find(l => l.meal_type === type);
-              const labels = { breakfast: "فطور", lunch: "غداء", dinner: "عشاء", snack: "سناك" };
               return (
                 <Link key={type} to={`/meals?log=${type}`} className="text-center">
                   <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center mb-1 ${logged ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
                     <Utensils className="w-5 h-5" />
                   </div>
-                  <p className="text-xs text-muted-foreground">{labels[type]}</p>
-                  {logged && <p className="text-[10px] text-primary font-medium">{logged.calories} سعرة</p>}
+                  <p className="text-xs text-muted-foreground">{t(`dashboard.mealTypes.${type}`)}</p>
+                  {logged && <p className="text-[10px] text-primary font-medium">{logged.calories} {t("common.cal")}</p>}
                 </Link>
               );
             })}

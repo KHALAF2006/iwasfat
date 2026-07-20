@@ -1,0 +1,23 @@
+{
+  "name": "RateLimit",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "مفتاح النافذة: action:email:YYYY-MM-DDTHH"
+    },
+    "count": {
+      "type": "number",
+      "default": 0,
+      "description": "عدد الاستدعاءات داخل النافذة الحالية"
+    },
+    "window_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "بداية نافذة الساعة الحالية"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}

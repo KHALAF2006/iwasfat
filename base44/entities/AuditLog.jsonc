@@ -1,0 +1,35 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "actor_email": {
+      "type": "string",
+      "description": "بريد منفذ الإجراء (أو system/webhook)"
+    },
+    "action": {
+      "type": "string",
+      "description": "نوع الإجراء مثل subscriber.status_change أو stripe.invoice_paid"
+    },
+    "target_type": {
+      "type": "string",
+      "description": "نوع الكيان المستهدف مثل Subscriber"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "معرف الكيان المستهدف"
+    },
+    "meta": {
+      "type": "object",
+      "description": "بيانات إضافية عن الحدث (JSON)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "وقت الحدث"
+    }
+  },
+  "required": [
+    "actor_email",
+    "action"
+  ]
+}

@@ -10,7 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Star, Edit2, Trash2, Loader2, TrendingDown } from "lucide-react";
 
+import { useT } from "@/i18n";
+
 export default function AdminTestimonials() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -77,7 +80,7 @@ export default function AdminTestimonials() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">قصص النجاح</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.testimonials')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{testimonials.filter(t => t.is_published).length} منشور · {testimonials.filter(t => t.is_featured).length} مميز</p>
         </div>
         <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>

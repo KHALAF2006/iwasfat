@@ -1,8 +1,9 @@
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import moment from "moment";
+import { useT } from "@/i18n";
 
 const TYPE_ICONS = {
   meal_reminder: "🍽️",
@@ -15,6 +16,7 @@ const TYPE_ICONS = {
 
 export default function Notifications() {
   const queryClient = useQueryClient();
+  const t = useT();
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -49,13 +51,13 @@ export default function Notifications() {
     <div className="px-4 pt-6 pb-24 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">الإشعارات</h1>
-          {unreadCount > 0 && <p className="text-muted-foreground text-sm">{unreadCount} غير مقروء</p>}
+          <h1 className="text-2xl font-bold text-foreground">{t("notifications.title")}</h1>
+          {unreadCount > 0 && <p className="text-muted-foreground text-sm">{unreadCount} {t("notifications.unread")}</p>}
         </div>
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={markAllRead} className="gap-1 text-primary">
             <CheckCheck className="w-4 h-4" />
-            تحديد الكل كمقروء
+            {t("notifications.markAllRead")}
           </Button>
         )}
       </div>
@@ -63,7 +65,7 @@ export default function Notifications() {
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <Bell className="w-16 h-16 text-muted-foreground/20 mb-4" />
-          <p className="text-muted-foreground">لا توجد إشعارات حالياً</p>
+          <p className="text-muted-foreground">{t("notifications.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

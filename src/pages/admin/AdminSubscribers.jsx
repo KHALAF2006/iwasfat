@@ -8,7 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Edit2, Loader2, UserPlus, Download } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
+import { useT } from "@/i18n";
+
 export default function AdminSubscribers() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -25,7 +28,7 @@ export default function AdminSubscribers() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `تقرير-المشتركين-${new Date().toLocaleDateString('ar-SA').replace(/\//g, '-')}.pdf`;
+    a.download = `subscribers-report-${new Date().toISOString().split('T')[0]}-en.pdf`;
     a.click();
     URL.revokeObjectURL(url);
     setExportingPDF(false);
@@ -42,10 +45,44 @@ export default function AdminSubscribers() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Subscriber.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      await base44.entities.Subscriber.update(id, data);
+      // Audit trail: record admin status changes
+      if (data.subscription_status && data.subscription_status !== selected?.subscription_status_original) {
+        try {
+          const me = await base44.auth.me();
+          await base44.entities.AuditLog.create({
+            actor_email: me?.email || "admin",
+            action: "subscriber.status_change",
+            target_type: "Subscriber",
+            target_id: id,
+            meta: {
+              from: selected?.subscription_status_original,
+              to: data.subscription_status,
+            },
+            created_at: new Date().toISOString(),
+          });
+        } catch (e) {
+          console.error("Audit log failed:", e);
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allSubscribers"] });
+      queryClient.invalidateQueries({ queryKey: ["auditLog"] });
       setSelected(null);
+    },
+  });
+
+  // Latest 20 audit events for the subscriber open in the edit dialog
+  const { data: auditEvents = [] } = useQuery({
+    queryKey: ["auditLog", selected?.id],
+    enabled: !!selected,
+    queryFn: async () => {
+      const rows = await base44.entities.AuditLog.filter({ target_id: selected.id });
+      return rows
+        .sort((a, b) => new Date(b.created_at || b.created_date) - new Date(a.created_at || a.created_date))
+        .slice(0, 20);
     },
   });
 
@@ -66,11 +103,11 @@ export default function AdminSubscribers() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-        <h1 className="text-3xl font-bold text-foreground">إدارة المشتركين</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.subscribers')}</h1>
         <div className="flex gap-2">
           <Button onClick={exportPDF} disabled={exportingPDF} variant="outline" className="gap-2 whitespace-nowrap">
             {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            تصدير PDF
+            تصدير PDF (إنجليزي)
           </Button>
           <Input
             value={inviteEmail}
@@ -138,7 +175,7 @@ export default function AdminSubscribers() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <Button variant="ghost" size="icon" onClick={() => { setSelected(sub); setEditGroup(sub.group_id || ""); }}>
+                    <Button variant="ghost" size="icon" onClick={() => { setSelected({ ...sub, subscription_status_original: sub.subscription_status }); setEditGroup(sub.group_id || ""); }}>
                       <Edit2 className="w-4 h-4" />
                     </Button>
                   </td>
@@ -185,6 +222,33 @@ export default function AdminSubscribers() {
             >
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ"}
             </Button>
+
+            {/* Audit trail — latest 20 events for this subscriber */}
+            <div className="border-t border-border pt-3">
+              <p className="text-sm font-medium text-foreground mb-2">سجل الأحداث (آخر 20)</p>
+              {auditEvents.length === 0 ? (
+                <p className="text-xs text-muted-foreground">لا توجد أحداث مسجلة بعد</p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {auditEvents.map((ev) => (
+                    <div key={ev.id} className="text-xs bg-secondary/40 rounded-lg p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">{ev.action}</span>
+                        <span className="text-muted-foreground whitespace-nowrap" dir="ltr">
+                          {ev.created_at ? new Date(ev.created_at).toLocaleString("ar-SA") : ""}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-0.5" dir="ltr">{ev.actor_email}</p>
+                      {ev.meta && Object.keys(ev.meta).length > 0 && (
+                        <p className="text-muted-foreground mt-0.5 break-all" dir="ltr">
+                          {JSON.stringify(ev.meta)}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

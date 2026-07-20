@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useT } from "@/i18n";
 
 export default function HeroSection({ heroImage }) {
+  const t = useT();
+
   return (
     <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden" style={{marginTop: '-64px', paddingTop: '64px'}}>
       {/* Background image */}
       <div className="absolute inset-0">
         <img
           src={heroImage}
-          alt="أطعمة صحية"
+          alt={t("landing.hero.imageAlt")}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-l from-black/85 via-black/65 to-black/40" />
@@ -18,29 +21,29 @@ export default function HeroSection({ heroImage }) {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6">
         <div className="max-w-2xl mr-auto">
           <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-white/10 text-white/80 backdrop-blur-sm border border-white/10 mb-6">
-            ابدأ رحلتك نحو النسخة الأفضل منك
+            {t("landing.hero.badge")}
           </span>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight mb-6">
-            كنت سميناً
+            {t("landing.hero.title1")}
             <br />
-            <span className="text-accent">وانتهى الأمر.</span>
+            <span className="text-accent">{t("landing.hero.title2")}</span>
           </h1>
 
           <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-10 max-w-lg">
-            خطة تغذية مخصصة لك، متابعة يومية من خبير، مجتمع داعم، وذكاء اصطناعي يحلل وجباتك — كل ذلك في مكان واحد.
+            {t("landing.hero.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/register">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-lg px-8 py-6 rounded-xl gap-2">
-                ابدأ الآن — أول أسبوع مجاني
-                <ArrowLeft className="w-5 h-5" />
+                {t("landing.hero.ctaPrimary")}
+                <ArrowLeft className="w-5 h-5 rtl:rotate-0 ltr:rotate-180" />
               </Button>
             </Link>
             <a href="#how-it-works">
               <Button size="lg" variant="outline" className="text-white border-white/20 hover:bg-white/10 text-lg px-8 py-6 rounded-xl">
-                كيف يعمل؟
+                {t("landing.hero.ctaSecondary")}
               </Button>
             </a>
           </div>

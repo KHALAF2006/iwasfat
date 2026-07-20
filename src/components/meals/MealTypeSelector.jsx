@@ -1,29 +1,37 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import { useT } from "@/i18n";
 
-const mealTypes = [
-  { value: 'breakfast', label: '🌅 الفطور', arabic: 'breakfast' },
-  { value: 'lunch', label: '☀️ الغداء', arabic: 'lunch' },
-  { value: 'dinner', label: '🌙 العشاء', arabic: 'dinner' },
-  { value: 'snack', label: '🍎 السناك', arabic: 'snack' }
+const MEAL_TYPES = [
+  { value: "breakfast", emoji: "🍳" },
+  { value: "lunch", emoji: "🍽️" },
+  { value: "dinner", emoji: "🌙" },
+  { value: "snack", emoji: "🍎" },
 ];
 
+/** Step-1 picker: فطار / غداء / عشاء / سناك with emoji. */
 export default function MealTypeSelector({ selectedType, onSelect }) {
+  const t = useT();
+  const { language } = useLanguage();
+
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-bold text-foreground">نوع الوجبة</h3>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {mealTypes.map(type => (
-          <Button
+    <div className="grid grid-cols-2 gap-3">
+      {MEAL_TYPES.map((type) => {
+        const active = selectedType === type.value;
+        return (
+          <button
             key={type.value}
+            type="button"
             onClick={() => onSelect(type.value)}
-            variant={selectedType === type.value ? 'default' : 'outline'}
-            className={`py-6 ${selectedType === type.value ? 'ring-2 ring-primary' : ''}`}
+            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border text-sm font-medium transition-all ${
+              active
+                ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+                : "border-border bg-card hover:bg-secondary text-foreground"
+            }`}
           >
-            {type.label}
-          </Button>
-        ))}
-      </div>
+            <span className="text-3xl">{type.emoji}</span>
+            <span>{t(`mealFlow.types.${type.value}`)}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

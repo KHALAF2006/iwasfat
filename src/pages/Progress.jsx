@@ -11,13 +11,10 @@ import WeightChart from "@/components/progress/WeightChart";
 import MoodEnergyChart from "@/components/progress/MoodEnergyChart";
 import WaterChart from "@/components/progress/WaterChart";
 import ProgressStats from "@/components/progress/ProgressStats";
+import { useT } from "@/i18n";
 
-const PERIODS = [
-  { key: "week", label: "أسبوع" },
-  { key: "month", label: "شهر" },
-  { key: "3months", label: "3 أشهر" },
-  { key: "all", label: "الكل" },
-];
+const PERIOD_KEYS = ["week", "month", "threeMonths", "all"];
+const PERIOD_VALUES = { week: "week", month: "month", threeMonths: "3months", all: "all" };
 
 export default function Progress() {
   const queryClient = useQueryClient();
@@ -28,6 +25,7 @@ export default function Progress() {
   const [energy, setEnergy] = useState(3);
   const [mood, setMood] = useState(3);
   const [water, setWater] = useState("");
+  const t = useT();
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -95,37 +93,33 @@ export default function Progress() {
     water: log.water_cups,
   }));
 
-  const CHARTS = [
-    { key: "weight", label: "⚖️ الوزن" },
-    { key: "mood", label: "😊 الطاقة والمزاج" },
-    { key: "water", label: "💧 الماء" },
-  ];
+  const CHART_KEYS = ["weight", "mood", "water"];
 
   return (
     <div className="px-4 pt-6 pb-20 max-w-lg mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">تتبع التقدم</h1>
-          <p className="text-muted-foreground text-sm">رحلتك نحو هدفك</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("progress.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("progress.subtitle")}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-1">
-              <Plus className="w-4 h-4" /> تسجيل
+              <Plus className="w-4 h-4" /> {t("progress.log")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>تسجيل وزن اليوم</DialogTitle>
+              <DialogTitle>{t("progress.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>الوزن (كغ)</Label>
-                <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="مثال: 82.5" className="mt-1.5" dir="ltr" />
+                <Label>{t("progress.weight")}</Label>
+                <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder={t("progress.weightPlaceholder")} className="mt-1.5" dir="ltr" />
               </div>
               <div>
-                <Label>مستوى الطاقة</Label>
+                <Label>{t("progress.energy")}</Label>
                 <div className="flex gap-2 mt-1.5">
                   {[1, 2, 3, 4, 5].map(n => (
                     <button key={n} onClick={() => setEnergy(n)} className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${n <= energy ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
@@ -135,7 +129,7 @@ export default function Progress() {
                 </div>
               </div>
               <div>
-                <Label>المزاج</Label>
+                <Label>{t("progress.mood")}</Label>
                 <div className="flex gap-2 mt-1.5">
                   {["😞", "😐", "🙂", "😊", "🤩"].map((emoji, i) => (
                     <button key={i} onClick={() => setMood(i + 1)} className={`w-10 h-10 rounded-lg text-lg transition-all ${i + 1 === mood ? "scale-110 bg-secondary ring-2 ring-primary" : "opacity-50"}`}>
@@ -145,11 +139,11 @@ export default function Progress() {
                 </div>
               </div>
               <div>
-                <Label>أكواب الماء اليوم</Label>
-                <Input type="number" value={water} onChange={e => setWater(e.target.value)} className="mt-1.5" dir="ltr" placeholder="مثال: 8" />
+                <Label>{t("progress.waterCups")}</Label>
+                <Input type="number" value={water} onChange={e => setWater(e.target.value)} className="mt-1.5" dir="ltr" placeholder={t("progress.waterPlaceholder")} />
               </div>
               <Button onClick={handleSave} disabled={!weight || saveMutation.isPending} className="w-full py-5">
-                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ"}
+                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
               </Button>
             </div>
           </DialogContent>
@@ -161,26 +155,26 @@ export default function Progress() {
 
       {/* Period Selector */}
       <div className="flex gap-2 bg-secondary rounded-2xl p-1">
-        {PERIODS.map(p => (
+        {PERIOD_KEYS.map(key => (
           <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${period === p.key ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}
+            key={key}
+            onClick={() => setPeriod(PERIOD_VALUES[key])}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${period === PERIOD_VALUES[key] ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}
           >
-            {p.label}
+            {t(`progress.periods.${key}`)}
           </button>
         ))}
       </div>
 
       {/* Chart Tabs */}
       <div className="flex gap-2">
-        {CHARTS.map(c => (
+        {CHART_KEYS.map(key => (
           <button
-            key={c.key}
-            onClick={() => setActiveChart(c.key)}
-            className={`flex-1 py-2 px-1 rounded-xl text-xs font-medium border transition-all ${activeChart === c.key ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+            key={key}
+            onClick={() => setActiveChart(key)}
+            className={`flex-1 py-2 px-1 rounded-xl text-xs font-medium border transition-all ${activeChart === key ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
           >
-            {c.label}
+            {t(`progress.charts.${key}`)}
           </button>
         ))}
       </div>
@@ -189,19 +183,19 @@ export default function Progress() {
       <div className="bg-card rounded-2xl border border-border/50 p-5">
         {activeChart === "weight" && (
           <>
-            <h3 className="font-semibold text-foreground mb-4">منحنى الوزن</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("progress.chartTitles.weight")}</h3>
             <WeightChart data={weightData} targetWeight={subscriber?.target_weight} />
           </>
         )}
         {activeChart === "mood" && (
           <>
-            <h3 className="font-semibold text-foreground mb-4">الطاقة والمزاج</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("progress.chartTitles.mood")}</h3>
             <MoodEnergyChart data={moodData} />
           </>
         )}
         {activeChart === "water" && (
           <>
-            <h3 className="font-semibold text-foreground mb-4">استهلاك الماء</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("progress.chartTitles.water")}</h3>
             <WaterChart data={waterData} />
           </>
         )}
@@ -209,7 +203,7 @@ export default function Progress() {
 
       {/* History */}
       <div className="bg-card rounded-2xl border border-border/50 p-5">
-        <h3 className="font-semibold text-foreground mb-4">سجل القياسات ({filtered.length})</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t("progress.history")} ({filtered.length})</h3>
         {filtered.length > 0 ? (
           <div className="space-y-3">
             {[...filtered].reverse().slice(0, 15).map(log => (
@@ -222,12 +216,12 @@ export default function Progress() {
                     {log.water_cups && <span className="text-xs text-muted-foreground">💧 {log.water_cups}</span>}
                   </div>
                 </div>
-                <span className="text-lg font-bold text-primary">{log.weight} كغ</span>
+                <span className="text-lg font-bold text-primary">{log.weight} {t("common.kg")}</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm text-center py-4">لا توجد تسجيلات في هذه الفترة</p>
+          <p className="text-muted-foreground text-sm text-center py-4">{t("progress.empty")}</p>
         )}
       </div>
     </div>

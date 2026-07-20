@@ -7,16 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Share2, Trash2, Sparkles, Loader2, FileDown, CheckCircle2, Circle } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { ar, enUS } from 'date-fns/locale';
+import { useT, useLanguage } from '@/i18n';
+import { useToast } from '@/components/ui/use-toast';
 
-const CATEGORIES = {
-  meat_protein: { label: '🥩 اللحوم والبروتين', order: 1 },
-  vegetables_fruits: { label: '🥦 الخضروات والفواكه', order: 2 },
-  dairy: { label: '🧀 الألبان والأجبان', order: 3 },
-  grains_legumes: { label: '🌾 الحبوب والبقوليات', order: 4 },
-  oils_spices: { label: '🧴 الزيوت والتوابل', order: 5 },
-  drinks: { label: '🥤 المشروبات', order: 6 },
-  other: { label: '🛒 أخرى', order: 7 }
+const CATEGORY_ORDER = {
+  meat_protein: 1,
+  vegetables_fruits: 2,
+  dairy: 3,
+  grains_legumes: 4,
+  oils_spices: 5,
+  drinks: 6,
+  other: 7,
 };
 
 export default function ShoppingList() {
@@ -25,6 +27,11 @@ export default function ShoppingList() {
   const [generating, setGenerating] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
   const queryClient = useQueryClient();
+  const t = useT();
+  const { language } = useLanguage();
+  const { toast } = useToast();
+
+  const dateLocale = language === 'ar' ? ar : enUS;
 
   const { data: subscriber } = useQuery({
     queryKey: ['subscriber'],
@@ -89,37 +96,41 @@ export default function ShoppingList() {
   const generateList = async () => {
     if (!subscriber) return;
     setGenerating(true);
-    const weekStartStr = format(weekStart, 'yyyy-MM-dd');
-    await base44.functions.invoke('generateShoppingList', {
-      subscriber_id: subscriber.id,
-      week_start_date: weekStartStr
-    });
-    queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
-    setGenerating(false);
+    try {
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+      await base44.functions.invoke('generateShoppingList', {
+        subscriber_id: subscriber.id,
+        week_start_date: weekStartStr
+      });
+      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const exportPDF = async () => {
     if (!shoppingList) return;
     setExportingPDF(true);
-    const response = await base44.functions.invoke('exportShoppingPDF', {
-      shopping_list_id: shoppingList.id
-    });
-    // response.data is the PDF - but since it's binary we open via URL approach
-    // Instead we trigger download via fetch with auth
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `قائمة-التسوق-${shoppingList.week_start_date}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setExportingPDF(false);
+    try {
+      const response = await base44.functions.invoke('exportShoppingPDF', {
+        shopping_list_id: shoppingList.id
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${t('shopping.filePrefix')}-${shoppingList.week_start_date}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   const shareList = () => {
     if (!shoppingList?.items) return;
     const grouped = shoppingList.items.reduce((acc, item) => {
-      const cat = CATEGORIES[item.category]?.label || item.category;
+      const cat = t(`shopping.categories.${item.category}`);
       if (!acc[cat]) acc[cat] = [];
       acc[cat].push(`${item.is_checked ? '✅' : '☐'} ${item.item_name} — ${item.quantity}`);
       return acc;
@@ -130,21 +141,21 @@ export default function ShoppingList() {
       .join('\n\n');
 
     navigator.clipboard.writeText(message);
-    alert('تم نسخ القائمة للحافظة');
+    toast({ title: t('shopping.copied') });
   };
 
   if (!shoppingList) {
     return (
       <div className="px-4 pt-6 pb-20 max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground">قائمة التسوق</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('shopping.title')}</h1>
         </div>
         <div className="flex items-center justify-center h-64 text-center">
           <div>
-            <p className="text-muted-foreground mb-4">لا توجد قائمة تسوق حالياً</p>
+            <p className="text-muted-foreground mb-4">{t('shopping.empty')}</p>
             <Button onClick={generateList} disabled={generating || !subscriber} className="gap-2">
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {generating ? 'جارٍ التوليد...' : 'توليد قائمة بالذكاء الاصطناعي'}
+              {generating ? t('shopping.generating') : t('shopping.generate')}
             </Button>
           </div>
         </div>
@@ -160,7 +171,7 @@ export default function ShoppingList() {
   }, {});
 
   const sortedCategories = Object.keys(groupedItems).sort(
-    (a, b) => (CATEGORIES[a]?.order || 999) - (CATEGORIES[b]?.order || 999)
+    (a, b) => (CATEGORY_ORDER[a] || 999) - (CATEGORY_ORDER[b] || 999)
   );
 
   const checkedCount = shoppingList.items.filter(i => i.is_checked).length;
@@ -170,9 +181,9 @@ export default function ShoppingList() {
   return (
     <div className="px-4 pt-6 pb-20 max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">قائمة التسوق</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('shopping.title')}</h1>
         <p className="text-muted-foreground text-sm mt-2">
-          الأسبوع: {format(weekStart, 'd MMMM', { locale: ar })} — {format(addDays(weekStart, 6), 'd MMMM', { locale: ar })}
+          {t('shopping.weekLabel')} {format(weekStart, 'd MMMM', { locale: dateLocale })} — {format(addDays(weekStart, 6), 'd MMMM', { locale: dateLocale })}
         </p>
       </div>
 
@@ -181,8 +192,8 @@ export default function ShoppingList() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">تم التسوق</p>
-              <p className="text-2xl font-bold">{checkedCount} من {totalCount}</p>
+              <p className="text-sm text-muted-foreground">{t('shopping.shopped')}</p>
+              <p className="text-2xl font-bold">{checkedCount} {t('shopping.of')} {totalCount}</p>
               <div className="mt-2 w-48 h-2 bg-secondary rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-300"
@@ -201,16 +212,16 @@ export default function ShoppingList() {
       <div className="flex gap-2 mb-6 flex-wrap">
         <Button onClick={() => setShowAddItem(true)} className="flex-1 gap-2 min-w-[120px]">
           <Plus className="w-4 h-4" />
-          إضافة منتج
+          {t('shopping.addProduct')}
         </Button>
         <Button onClick={generateList} variant="outline" disabled={generating} className="flex-1 gap-2 min-w-[120px]">
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {generating ? 'جارٍ التوليد...' : 'تحديث بالذكاء الاصطناعي'}
+          {generating ? t('shopping.generating') : t('shopping.refreshAI')}
         </Button>
-        <Button onClick={exportPDF} variant="outline" disabled={exportingPDF} size="icon" title="تصدير PDF">
+        <Button onClick={exportPDF} variant="outline" disabled={exportingPDF} size="icon" title={t('shopping.exportPDF')}>
           {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
         </Button>
-        <Button onClick={shareList} variant="outline" size="icon" title="مشاركة">
+        <Button onClick={shareList} variant="outline" size="icon" title={t('shopping.share')}>
           <Share2 className="w-4 h-4" />
         </Button>
       </div>
@@ -220,7 +231,7 @@ export default function ShoppingList() {
         {sortedCategories.map(categoryKey => (
           <Card key={categoryKey}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{CATEGORIES[categoryKey]?.label}</CardTitle>
+              <CardTitle className="text-base">{t(`shopping.categories.${categoryKey}`)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
               {groupedItems[categoryKey].map((item) => (
@@ -260,36 +271,36 @@ export default function ShoppingList() {
       <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>إضافة منتج جديد</DialogTitle>
+            <DialogTitle>{t('shopping.dialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">الفئة</label>
+              <label className="text-sm font-medium">{t('shopping.category')}</label>
               <select
                 value={newItem.category}
                 onChange={e => setNewItem({ ...newItem, category: e.target.value })}
                 className="w-full mt-2 px-3 py-2 border border-border rounded-md bg-background"
               >
-                {Object.entries(CATEGORIES).map(([key, val]) => (
-                  <option key={key} value={key}>{val.label}</option>
+                {Object.keys(CATEGORY_ORDER).map(key => (
+                  <option key={key} value={key}>{t(`shopping.categories.${key}`)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium">اسم المنتج</label>
+              <label className="text-sm font-medium">{t('shopping.itemName')}</label>
               <Input
                 value={newItem.item_name}
                 onChange={e => setNewItem({ ...newItem, item_name: e.target.value })}
-                placeholder="مثل: صدر دجاج"
+                placeholder={t('shopping.itemNamePlaceholder')}
                 className="mt-2"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">الكمية</label>
+              <label className="text-sm font-medium">{t('shopping.quantity')}</label>
               <Input
                 value={newItem.quantity}
                 onChange={e => setNewItem({ ...newItem, quantity: e.target.value })}
-                placeholder="مثل: 500غ أو 2 كيلو"
+                placeholder={t('shopping.quantityPlaceholder')}
                 className="mt-2"
               />
             </div>
@@ -298,7 +309,7 @@ export default function ShoppingList() {
               disabled={addItemMutation.isPending || !newItem.item_name || !newItem.quantity}
               className="w-full"
             >
-              إضافة
+              {t('common.add')}
             </Button>
           </div>
         </DialogContent>

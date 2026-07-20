@@ -8,7 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Users, Edit2, Trash2, Loader2 } from "lucide-react";
 
+import { useT } from "@/i18n";
+
 export default function AdminGroups() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", max_members: 20 });
@@ -54,7 +57,7 @@ export default function AdminGroups() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-foreground">إدارة المجموعات</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.groups')}</h1>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setForm({ name: "", description: "", max_members: 20 }); } }}>
           <DialogTrigger asChild>
             <Button className="bg-primary text-primary-foreground gap-1"><Plus className="w-4 h-4" /> مجموعة جديدة</Button>

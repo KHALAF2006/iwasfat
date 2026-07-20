@@ -17,7 +17,10 @@ const REGIONS = {
 
 const emptyForm = { name: "", name_en: "", icon: "🍽️", description: "", region: "gulf", is_active: true, sort_order: 0 };
 
+import { useT } from "@/i18n";
+
 export default function AdminKitchens() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -56,7 +59,7 @@ export default function AdminKitchens() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">المطابخ</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.kitchens')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{kitchens.length} مطبخ مسجل</p>
         </div>
         <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>

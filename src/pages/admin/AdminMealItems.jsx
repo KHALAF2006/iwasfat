@@ -25,7 +25,10 @@ const emptyForm = {
   sizes: [{ size_name: "حصة عادية", calories: 0, protein: 0, carbs: 0, fat: 0, is_default: true }],
 };
 
+import { useT } from "@/i18n";
+
 export default function AdminMealItems() {
+  const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -105,8 +108,11 @@ export default function AdminMealItems() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">الوجبات</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.titles.mealItems')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{meals.length} وجبة مسجلة</p>
+          <p className="text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5 mt-2 max-w-xl">
+            {t('adminPro.mealItemsSubtitle')}
+          </p>
         </div>
         <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>

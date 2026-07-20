@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, Image as ImageIcon, ThumbsUp, Heart, Dumbbell, Users, Loader2 } from "lucide-react";
 import moment from "moment";
+import { useT } from "@/i18n";
+
+const POST_TYPE_KEYS = ["general", "meal", "progress", "question"];
 
 export default function Group() {
   const queryClient = useQueryClient();
   const [newPost, setNewPost] = useState("");
   const [postType, setPostType] = useState("general");
   const [imageFile, setImageFile] = useState(null);
+  const t = useT();
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -76,15 +80,15 @@ export default function Group() {
     return (
       <div className="px-4 pt-6 pb-4 max-w-lg mx-auto text-center">
         <Users className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">مجموعتي</h1>
-        <p className="text-muted-foreground">لم يتم تعيينك في مجموعة بعد. سيتم إضافتك قريباً!</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t("group.title")}</h1>
+        <p className="text-muted-foreground">{t("group.noGroup")}</p>
       </div>
     );
   }
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-1">{group?.name || "مجموعتي"}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-1">{group?.name || t("group.title")}</h1>
       <p className="text-muted-foreground text-sm mb-6">{group?.description || ""}</p>
 
       {/* New Post */}
@@ -92,7 +96,7 @@ export default function Group() {
         <Textarea
           value={newPost}
           onChange={e => setNewPost(e.target.value)}
-          placeholder="شارك وجبتك، تقدمك، أو اسأل سؤال..."
+          placeholder={t("group.placeholder")}
           className="mb-3 resize-none"
           rows={3}
         />
@@ -103,10 +107,9 @@ export default function Group() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general">عام</SelectItem>
-                <SelectItem value="meal">وجبة</SelectItem>
-                <SelectItem value="progress">تقدم</SelectItem>
-                <SelectItem value="question">سؤال</SelectItem>
+                {POST_TYPE_KEYS.map(key => (
+                  <SelectItem key={key} value={key}>{t(`group.types.${key}`)}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <label className="cursor-pointer">
@@ -115,11 +118,11 @@ export default function Group() {
               </Button>
               <input type="file" accept="image/*" className="hidden" onChange={e => setImageFile(e.target.files[0])} />
             </label>
-            {imageFile && <span className="text-xs text-primary">📎 صورة مرفقة</span>}
+            {imageFile && <span className="text-xs text-primary">{t("group.imageAttached")}</span>}
           </div>
           <Button size="sm" onClick={handlePost} disabled={!newPost.trim() || postMutation.isPending} className="bg-primary text-primary-foreground gap-1">
             {postMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-            نشر
+            {t("group.publish")}
           </Button>
         </div>
       </div>
@@ -130,14 +133,14 @@ export default function Group() {
           <div key={post.id} className="bg-card rounded-2xl border border-border/50 p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">{post.subscriber_name?.[0] || "م"}</span>
+                <span className="text-primary font-bold text-sm">{post.subscriber_name?.[0] || "👤"}</span>
               </div>
               <div>
                 <p className="font-medium text-foreground text-sm">{post.subscriber_name}</p>
                 <p className="text-xs text-muted-foreground">{moment(post.created_date).fromNow()}</p>
               </div>
-              <span className="mr-auto text-[10px] bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">
-                {{ meal: "وجبة", progress: "تقدم", question: "سؤال", general: "عام" }[post.post_type] || "عام"}
+              <span className="ms-auto text-[10px] bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">
+                {t(`group.types.${post.post_type}`)}
               </span>
             </div>
 
@@ -162,7 +165,7 @@ export default function Group() {
         ))}
         {posts.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm">
-            لا توجد منشورات بعد. كن أول من يشارك! 🎉
+            {t("group.empty")}
           </div>
         )}
       </div>

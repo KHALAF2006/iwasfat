@@ -15,6 +15,16 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'subscriber_id is required' }, { status: 400 });
         }
 
+        // SECURITY (IDOR fix): callers may only read their OWN stats.
+        // The caller's Subscriber is resolved via created_by == auth email; admins bypass.
+        if (user.role !== 'admin') {
+            const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+            const mySubscriber = own[0];
+            if (!mySubscriber || mySubscriber.id !== subscriber_id) {
+                return Response.json({ error: 'Forbidden: not your subscriber record' }, { status: 403 });
+            }
+        }
+
         // Fetch subscriber, food logs, and daily meal plans in parallel
         const [subscribers, foodLogs, dailyMealPlans] = await Promise.all([
             base44.entities.Subscriber.filter({ id: subscriber_id }),

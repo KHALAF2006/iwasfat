@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, LogOut, Scale, Target, Calendar, Activity, Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { LogOut, Scale, Target, Calendar, Activity, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { useT, useLanguage } from "@/i18n";
 
 export default function Profile() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(null);
+  const t = useT();
+  const { language } = useLanguage();
 
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
@@ -44,14 +47,7 @@ export default function Profile() {
     });
   };
 
-  const handleLogout = () => {
-    base44.auth.logout("/");
-  };
-
-  const statusLabels = { trial: "تجريبي", active: "نشط", expired: "منتهي", cancelled: "ملغي" };
   const statusColors = { trial: "bg-accent/10 text-accent", active: "bg-primary/10 text-primary", expired: "bg-destructive/10 text-destructive", cancelled: "bg-muted text-muted-foreground" };
-
-  const activityLabels = { sedentary: "خامل", light: "خفيف", moderate: "متوسط", active: "نشيط" };
 
   if (!subscriber) {
     return (
@@ -62,13 +58,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <div className="flex items-center gap-2 mb-6">
-        <Link to="/dashboard">
-          <Button variant="ghost" size="icon"><ArrowRight className="w-5 h-5" /></Button>
-        </Link>
-        <h1 className="text-2xl font-bold text-foreground">الملف الشخصي</h1>
-      </div>
+    <div className="px-4 pt-6 pb-24 max-w-lg mx-auto">
+      <h1 className="text-2xl font-bold text-foreground mb-6">{t("profile.title")}</h1>
 
       {/* Profile Header */}
       <div className="bg-card rounded-2xl border border-border/50 p-6 mb-4 text-center">
@@ -76,15 +67,15 @@ export default function Profile() {
           <span className="text-primary font-bold text-2xl">{subscriber.full_name?.[0]}</span>
         </div>
         <h2 className="text-xl font-bold text-foreground">{subscriber.full_name}</h2>
-        <p className="text-sm text-muted-foreground">{subscriber.email}</p>
+        <p className="text-sm text-muted-foreground" dir="ltr">{subscriber.email}</p>
         <Badge className={`mt-2 ${statusColors[subscriber.subscription_status]}`}>
-          {statusLabels[subscriber.subscription_status]}
+          {t(`profile.statuses.${subscriber.subscription_status}`)}
         </Badge>
       </div>
 
       {/* BMI Card */}
       <div className="bg-card rounded-2xl border border-border/50 p-5 mb-4">
-        <h3 className="font-semibold text-foreground mb-3">بياناتك الصحية</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t("profile.healthData")}</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <Scale className="w-5 h-5 text-primary" />
@@ -96,22 +87,22 @@ export default function Profile() {
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-accent" />
             <div>
-              <p className="text-xs text-muted-foreground">الوزن المثالي</p>
-              <p className="font-bold text-foreground">{subscriber.ideal_weight_min}-{subscriber.ideal_weight_max} كغ</p>
+              <p className="text-xs text-muted-foreground">{t("profile.idealWeight")}</p>
+              <p className="font-bold text-foreground">{subscriber.ideal_weight_min}-{subscriber.ideal_weight_max} {t("common.kg")}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Activity className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">مستوى النشاط</p>
-              <p className="font-bold text-foreground">{activityLabels[subscriber.activity_level]}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.activityLevel")}</p>
+              <p className="font-bold text-foreground">{t(`profile.activity.${subscriber.activity_level}`)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Calendar className="w-5 h-5 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">تاريخ الانضمام</p>
-              <p className="font-bold text-foreground">{new Date(subscriber.created_date).toLocaleDateString("ar-SA")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.joinDate")}</p>
+              <p className="font-bold text-foreground">{new Date(subscriber.created_date).toLocaleDateString(language === "ar" ? "ar-SA" : "en-US")}</p>
             </div>
           </div>
         </div>
@@ -120,34 +111,34 @@ export default function Profile() {
       {/* Edit Section */}
       <div className="bg-card rounded-2xl border border-border/50 p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-foreground">تعديل البيانات</h3>
+          <h3 className="font-semibold text-foreground">{t("profile.editData")}</h3>
           <Button variant="ghost" size="sm" onClick={() => {
             if (!editing) setForm({ height_cm: subscriber.height_cm, target_weight: subscriber.target_weight });
             setEditing(!editing);
           }}>
-            {editing ? "إلغاء" : "تعديل"}
+            {editing ? t("common.cancel") : t("common.edit")}
           </Button>
         </div>
         {editing && form && (
           <div className="space-y-3">
             <div>
-              <Label>الطول (سم)</Label>
+              <Label>{t("profile.height")}</Label>
               <Input type="number" value={form.height_cm} onChange={e => setForm(p => ({ ...p, height_cm: e.target.value }))} className="mt-1" dir="ltr" />
             </div>
             <div>
-              <Label>الوزن المستهدف (كغ)</Label>
+              <Label>{t("profile.targetWeight")}</Label>
               <Input type="number" value={form.target_weight} onChange={e => setForm(p => ({ ...p, target_weight: e.target.value }))} className="mt-1" dir="ltr" />
             </div>
             <Button onClick={handleSave} disabled={updateMutation.isPending} className="w-full bg-primary text-primary-foreground">
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ"}
+              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
             </Button>
           </div>
         )}
       </div>
 
       {/* Logout */}
-      <Button variant="outline" onClick={handleLogout} className="w-full text-destructive border-destructive/30 hover:bg-destructive/5 gap-2 py-5">
-        <LogOut className="w-4 h-4" /> تسجيل الخروج
+      <Button variant="outline" onClick={() => logout("/")} className="w-full text-destructive border-destructive/30 hover:bg-destructive/5 gap-2 py-5">
+        <LogOut className="w-4 h-4" /> {t("auth.logout")}
       </Button>
     </div>
   );

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Bell, Send, Trash2, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -25,7 +25,10 @@ const emptyForm = {
   group_id: ''
 };
 
+import { useT } from "@/i18n";
+
 export default function AdminNotifications() {
+  const t = useT();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const queryClient = useQueryClient();
@@ -102,7 +105,7 @@ export default function AdminNotifications() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">الإشعارات</h1>
+          <h1 className="text-2xl font-bold">{t('admin.titles.notifications')}</h1>
           <p className="text-muted-foreground text-sm mt-1">إرسال إشعارات للمشتركين</p>
         </div>
         <Button onClick={() => setShowForm(true)} className="gap-2">

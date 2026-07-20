@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Play, Image, FileText, Clock, Bookmark, BookOpen } from "lucide-react";
+import { Play, Image, FileText, Clock, BookOpen } from "lucide-react";
+import { useT } from "@/i18n";
 
-const CATEGORIES = {
-  all: "الكل",
-  nutrition: "التغذية",
-  exercise: "التمارين",
-  shopping: "التسوق",
-  appetite: "الشهية",
-  motivation: "تحفيز",
-};
+const CATEGORY_KEYS = ["all", "nutrition", "exercise", "shopping", "appetite", "motivation"];
 
 const TYPE_ICONS = {
   video: Play,
@@ -22,6 +15,7 @@ const TYPE_ICONS = {
 
 export default function Content() {
   const [category, setCategory] = useState("all");
+  const t = useT();
 
   const { data: content = [] } = useQuery({
     queryKey: ["content"],
@@ -32,13 +26,13 @@ export default function Content() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-2">المحتوى التعليمي</h1>
-      <p className="text-muted-foreground text-sm mb-6">فيديوهات ونصائح لدعم رحلتك</p>
+      <h1 className="text-2xl font-bold text-foreground mb-2">{t("content.title")}</h1>
+      <p className="text-muted-foreground text-sm mb-6">{t("content.subtitle")}</p>
 
       {/* Category Tabs */}
       <div className="overflow-x-auto mb-6 -mx-4 px-4">
         <div className="flex gap-2 min-w-max">
-          {Object.entries(CATEGORIES).map(([key, label]) => (
+          {CATEGORY_KEYS.map(key => (
             <button
               key={key}
               onClick={() => setCategory(key)}
@@ -46,7 +40,7 @@ export default function Content() {
                 category === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
               }`}
             >
-              {label}
+              {t(`content.categories.${key}`)}
             </button>
           ))}
         </div>
@@ -71,7 +65,7 @@ export default function Content() {
                   {item.duration_minutes && (
                     <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {item.duration_minutes} دقائق
+                      {item.duration_minutes} {t("common.minutes")}
                     </div>
                   )}
                 </div>
@@ -81,7 +75,7 @@ export default function Content() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Icon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{CATEGORIES[item.category] || item.category}</span>
+                      <span className="text-xs text-muted-foreground">{t(`content.categories.${item.category}`)}</span>
                     </div>
                     <h3 className="font-semibold text-foreground">{item.title}</h3>
                     {item.description && (
@@ -95,7 +89,7 @@ export default function Content() {
         }) : (
           <div className="text-center py-12 text-muted-foreground">
             <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-            <p>لا يوجد محتوى متاح حالياً</p>
+            <p>{t("content.empty")}</p>
           </div>
         )}
       </div>

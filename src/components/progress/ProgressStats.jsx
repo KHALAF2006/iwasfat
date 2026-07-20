@@ -1,6 +1,8 @@
-import { TrendingDown, TrendingUp, Target, Droplets, Scale, Zap } from "lucide-react";
+import { TrendingDown, TrendingUp, Target, Scale, Zap } from "lucide-react";
+import { useT } from "@/i18n";
 
 export default function ProgressStats({ subscriber, weightLogs }) {
+  const t = useT();
   const startWeight = subscriber?.current_weight || 0;
   const targetWeight = subscriber?.target_weight || 0;
   const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : startWeight;
@@ -19,7 +21,7 @@ export default function ProgressStats({ subscriber, weightLogs }) {
       {/* Progress Bar */}
       <div className="bg-card rounded-2xl border border-border/50 p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground">التقدم نحو الهدف</span>
+          <span className="text-sm font-medium text-foreground">{t("components.progressStats.towardGoal")}</span>
           <span className="text-sm font-bold text-primary">{progressPct}%</span>
         </div>
         <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
@@ -29,8 +31,8 @@ export default function ProgressStats({ subscriber, weightLogs }) {
           />
         </div>
         <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-          <span>البداية: {startWeight} كغ</span>
-          <span>الهدف: {targetWeight} كغ</span>
+          <span>{t("components.progressStats.start")} {startWeight} {t("common.kg")}</span>
+          <span>{t("components.progressStats.target")} {targetWeight} {t("common.kg")}</span>
         </div>
       </div>
 
@@ -39,7 +41,7 @@ export default function ProgressStats({ subscriber, weightLogs }) {
         <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
           <Scale className="w-5 h-5 text-primary mx-auto mb-1" />
           <p className="text-xl font-bold text-foreground">{currentWeight}</p>
-          <p className="text-xs text-muted-foreground">الوزن الحالي</p>
+          <p className="text-xs text-muted-foreground">{t("components.progressStats.currentWeight")}</p>
         </div>
         <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
           {totalLost >= 0
@@ -49,12 +51,14 @@ export default function ProgressStats({ subscriber, weightLogs }) {
           <p className={`text-xl font-bold ${totalLost >= 0 ? "text-green-600" : "text-destructive"}`}>
             {Math.abs(totalLost).toFixed(1)}
           </p>
-          <p className="text-xs text-muted-foreground">كغ {totalLost >= 0 ? "فُقدت" : "زيادة"}</p>
+          <p className="text-xs text-muted-foreground">
+            {totalLost >= 0 ? t("components.progressStats.kgLost") : t("components.progressStats.kgGained")}
+          </p>
         </div>
         <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
           <Target className="w-5 h-5 text-accent mx-auto mb-1" />
           <p className="text-xl font-bold text-foreground">{remaining.toFixed(1)}</p>
-          <p className="text-xs text-muted-foreground">كغ متبقية</p>
+          <p className="text-xs text-muted-foreground">{t("components.progressStats.kgRemaining")}</p>
         </div>
       </div>
 
@@ -64,10 +68,12 @@ export default function ProgressStats({ subscriber, weightLogs }) {
           <Zap className={`w-5 h-5 ${parseFloat(weekChange) <= 0 ? "text-green-600" : "text-orange-500"}`} />
           <div>
             <p className={`text-sm font-semibold ${parseFloat(weekChange) <= 0 ? "text-green-700" : "text-orange-600"}`}>
-              {parseFloat(weekChange) <= 0 ? `نزلت ${Math.abs(weekChange)} كغ` : `ارتفع ${weekChange} كغ`} منذ آخر تسجيل
+              {parseFloat(weekChange) <= 0
+                ? t("components.progressStats.down", { value: Math.abs(weekChange) })
+                : t("components.progressStats.up", { value: weekChange })} {t("components.progressStats.sinceLast")}
             </p>
             <p className="text-xs text-muted-foreground">
-              {parseFloat(weekChange) <= 0 ? "رائع! استمر على هذا المسار 💪" : "لا تقلق، التقلبات طبيعية 🌿"}
+              {parseFloat(weekChange) <= 0 ? t("components.progressStats.greatJob") : t("components.progressStats.dontWorry")}
             </p>
           </div>
         </div>

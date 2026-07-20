@@ -1,45 +1,63 @@
-import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { useT, useLanguage } from "@/i18n";
 
-const kitchenEmojis = {
-  gulf: '🫕',
-  levant: '🥙',
-  egypt: '🍽️',
-  yemen: '🫘',
-  north_africa: '🥘',
-  iraq: '🐟',
-  palestine: '🍋'
-};
+/**
+ * Step-2 picker: cuisine filter from the Kitchen entity. `null` selection
+ * means "all kitchens". `defaultKitchenId` (e.g. derived from the
+ * subscriber's group plan) is pre-selected by the parent.
+ */
+export default function KitchenSelector({ selectedKitchenId, onSelect }) {
+  const t = useT();
+  const { language } = useLanguage();
 
-export default function KitchenSelector({ onSelectKitchen, selectedKitchen }) {
-  const { data: kitchens, isLoading } = useQuery({
-    queryKey: ['kitchens'],
+  const { data: kitchens = [], isLoading } = useQuery({
+    queryKey: ["kitchens"],
     queryFn: () => base44.entities.Kitchen.filter({ is_active: true }),
   });
 
-  if (isLoading) return <div className="text-center py-4">جاري التحميل...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+
+  const sorted = [...kitchens].sort(
+    (a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99)
+  );
+
+  const renderButton = (id, icon, label) => {
+    const active = (selectedKitchenId ?? null) === id;
+    return (
+      <button
+        key={id ?? "all"}
+        type="button"
+        onClick={() => onSelect(id)}
+        className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-xs font-medium transition-all ${
+          active
+            ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+            : "border-border bg-card hover:bg-secondary text-foreground"
+        }`}
+      >
+        <span className="text-2xl">{icon}</span>
+        <span className="text-center leading-tight">{label}</span>
+      </button>
+    );
+  };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-bold text-foreground">اختر مطبخك المفضل</h3>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-        {kitchens?.map(kitchen => (
-          <Button
-            key={kitchen.id}
-            onClick={() => onSelectKitchen(kitchen)}
-            variant={selectedKitchen?.id === kitchen.id ? 'default' : 'outline'}
-            className={`flex flex-col items-center justify-center h-24 rounded-lg gap-1 transition-all ${
-              selectedKitchen?.id === kitchen.id ? 'ring-2 ring-primary' : ''
-            }`}
-          >
-            <span className="text-3xl">{kitchen.icon}</span>
-            <span className="text-xs text-center leading-tight">{kitchen.name}</span>
-          </Button>
-        ))}
-      </div>
+    <div className="grid grid-cols-3 gap-2">
+      {renderButton(null, "🌍", t("mealFlow.allKitchens"))}
+      {sorted.map((k) =>
+        renderButton(
+          k.id,
+          k.icon || "🍽️",
+          language === "ar" ? k.name : k.name_en || k.name
+        )
+      )}
     </div>
   );
 }
