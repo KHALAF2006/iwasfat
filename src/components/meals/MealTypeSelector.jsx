@@ -1,4 +1,4 @@
-import { useT } from "@/i18n";
+import { useT, useLanguage } from "@/i18n";
 
 const MEAL_TYPES = [
   { value: "breakfast", emoji: "🍳" },

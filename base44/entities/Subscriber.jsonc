@@ -97,60 +97,6 @@
     "phone": {
       "type": "string",
       "description": "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644"
-    },
-    "plan_id": {
-      "type": "string",
-      "description": "Plan id"
-    },
-    "stripe_customer_id": {
-      "type": "string",
-      "description": "Stripe customer id (cus_...)"
-    },
-    "stripe_subscription_id": {
-      "type": "string",
-      "description": "Stripe subscription id (sub_...)"
-    },
-    "trial_ends_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Trial period end timestamp"
-    },
-    "subscription_renews_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Next subscription renewal timestamp"
-    },
-    "grace_ends_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "End of grace period after failed payment or trial expiry"
-    },
-    "cancel_at_period_end": {
-      "type": "boolean",
-      "default": false,
-      "description": "Cancellation requested at end of current period"
-    },
-    "telegram_chat_id": {
-      "type": "string",
-      "description": "Linked Telegram chat id"
-    },
-    "telegram_username": {
-      "type": "string",
-      "description": "Telegram username"
-    },
-    "telegram_connected_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When the Telegram account was linked"
-    },
-    "telegram_connect_token": {
-      "type": "string",
-      "description": "One-time Telegram connect token"
-    },
-    "notify_telegram": {
-      "type": "boolean",
-      "default": false,
-      "description": "Enable Telegram notifications"
     }
   },
   "required": [
@@ -160,5 +106,53 @@
     "height_cm",
     "current_weight",
     "target_weight"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "user",
+            "admin"
+          ]
+        }
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

@@ -23,5 +23,51 @@
     "post_id",
     "subscriber_id",
     "content"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "user",
+            "admin"
+          ]
+        }
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "user",
+            "admin"
+          ]
+        }
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

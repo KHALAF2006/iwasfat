@@ -36,7 +36,7 @@
           },
           "quantity": {
             "type": "string",
-            "description": "\u0627\u0644\u0643\u0645\u064a\u0629 (\u0645\u062b\u0644 500\u063a\u060c 2 \u0643\u0648\u0628\u060c \u0625\u0644\u062e)"
+            "description": "\u0627\u0644\u0643\u0645\u064a\u0629"
           },
           "is_checked": {
             "type": "boolean",
@@ -62,7 +62,7 @@
     "generated_from_meals": {
       "type": "boolean",
       "default": true,
-      "description": "\u0647\u0644 \u062a\u0645 \u0625\u0646\u0634\u0627\u0624\u0647\u0627 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u0645\u0646 \u0627\u0644\u0648\u062c\u0628\u0627\u062a"
+      "description": "\u0647\u0644 \u062a\u0645 \u0625\u0646\u0634\u0627\u0624\u0647\u0627 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b \u0645\u0646 \u0627\u0644\u0648\u062c\u0628\u0627\u062a"
     },
     "is_active": {
       "type": "boolean",
@@ -73,5 +73,53 @@
     "subscriber_id",
     "week_start_date",
     "items"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "user",
+            "admin"
+          ]
+        }
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

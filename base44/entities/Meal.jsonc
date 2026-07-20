@@ -109,7 +109,7 @@
     "warning_cholesterol": {
       "type": "boolean",
       "default": false,
-      "description": "\u062a\u062d\u0630\u064a\u0631 \u0644\u0645\u0631\u0636\u0649 \u0627\u0644\u0643\u0648\u0644\u064a\u0633\u062a\u0631\u0648\u0644"
+      "description": "\u062a\u062d\u0630\u064a\u0631 \u0644\u0645\u0631\u0636\u0649 \u0627\u0644\u0643\u0648\u0644\u0633\u062a\u0631\u0648\u0644"
     },
     "warning_kidney_disease": {
       "type": "boolean",
@@ -122,5 +122,23 @@
     "kitchen_id",
     "meal_type",
     "sizes"
-  ]
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
