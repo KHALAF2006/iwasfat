@@ -27,11 +27,11 @@
     },
     "serving_size": {
       "type": "string",
-      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629 (\u0643\u0648\u0628\u060c \u0643\u0648\u0628 \u0635\u063a\u064a\u0631\u060c \u0625\u0644\u062e)"
+      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629"
     },
     "serving_ml": {
       "type": "number",
-      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629 \u0628\u0627\u0644\u0645\u064a\u0644\u064a \u0644\u062a\u0631"
+      "description": "\u062d\u062c\u0645 \u0627\u0644\u062d\u0635\u0629 \u0628\u0627\u0644\u0645\u064a\u062a\u0631"
     },
     "calories": {
       "type": "number",
