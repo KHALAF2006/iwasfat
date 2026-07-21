@@ -76,18 +76,7 @@
     "quote"
   ],
   "rls": {
-    "read": {
-      "$or": [
-        {
-          "data.is_published": true
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": {},
     "create": {
       "user_condition": {
         "role": "admin"
