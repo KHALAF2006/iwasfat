@@ -10,6 +10,7 @@ import { format, addDays, startOfWeek } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { useT, useLanguage } from '@/i18n';
 import { useToast } from '@/components/ui/use-toast';
+import { showApiError } from '@/lib/api-error';
 
 const CATEGORY_ORDER = {
   meat_protein: 1,
@@ -66,6 +67,7 @@ export default function ShoppingList() {
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
+    onError: (err) => showApiError(err),
   });
 
   const deleteItemMutation = useMutation({
@@ -75,6 +77,7 @@ export default function ShoppingList() {
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
+    onError: (err) => showApiError(err),
   });
 
   const addItemMutation = useMutation({
@@ -91,6 +94,7 @@ export default function ShoppingList() {
       setNewItem({ category: 'other', item_name: '', quantity: '' });
       setShowAddItem(false);
     },
+    onError: (err) => showApiError(err),
   });
 
   const generateList = async () => {
@@ -103,6 +107,8 @@ export default function ShoppingList() {
         week_start_date: weekStartStr
       });
       queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+    } catch (err) {
+      showApiError(err);
     } finally {
       setGenerating(false);
     }

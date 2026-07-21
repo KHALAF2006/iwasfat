@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { showApiError } from '@/lib/api-error';
 
 export default function CommentSection({ postId, subscriber }) {
   const [comments, setComments] = useState([]);
@@ -50,6 +51,7 @@ export default function CommentSection({ postId, subscriber }) {
       setNewComment('');
     } catch (error) {
       console.error('Error adding comment:', error);
+      showApiError(error);
     } finally {
       setLoading(false);
     }

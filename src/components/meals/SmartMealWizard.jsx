@@ -16,6 +16,7 @@ import FoodItemSelector from "./FoodItemSelector";
 import MealWarnings from "./MealWarnings";
 import ManualMealEntry from "./ManualMealEntry";
 import { buildEngineProfile, evaluateMealForSubscriber, useFoodIndexItems } from "./conditions";
+import { showApiError } from "@/lib/api-error";
 
 const TOTAL_STEPS = 6;
 const PORTION_MULTIPLIERS = [0.5, 1, 1.5, 2];
@@ -169,6 +170,8 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
       queryClient.invalidateQueries({ queryKey: ["dailyPlan"] });
       onClose();
     },
+    // Keep the wizard open so the user can retry; only toast the failure.
+    onError: (err) => showApiError(err),
   });
 
   // ── navigation ──────────────────────────────────────────────────────────

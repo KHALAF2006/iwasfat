@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Wand2 } from "lucide-react";
 import { useT } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 
 const COOKING_METHODS = ["grilled", "boiled", "fried", "raw", "cooked"];
 
@@ -36,6 +37,7 @@ export default function ManualMealEntry({ isOpen, onClose, onSubmit }) {
     onSuccess: (data) => {
       if (data?.calories != null) setManualCalories(String(Math.round(data.calories)));
     },
+    onError: (err) => showApiError(err),
   });
 
   const reset = () => {

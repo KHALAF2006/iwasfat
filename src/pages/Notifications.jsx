@@ -4,6 +4,7 @@ import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import moment from "moment";
 import { useT } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 
 const TYPE_ICONS = {
   meal_reminder: "🍽️",
@@ -39,10 +40,14 @@ export default function Notifications() {
   });
 
   const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.is_read);
-    await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    try {
+      const unread = notifications.filter(n => !n.is_read);
+      await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    } catch (err) {
+      showApiError(err);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Flame, Clock, Trophy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useT } from '@/i18n';
+import { showApiError } from '@/lib/api-error';
 
 const CALORIES_PER_MIN = {
   walking: 4,
@@ -95,6 +96,7 @@ export default function Exercise() {
       setForm(emptyForm);
       setShowForm(false);
     },
+    onError: (err) => showApiError(err),
   });
 
   const deleteMutation = useMutation({
@@ -103,6 +105,7 @@ export default function Exercise() {
       queryClient.invalidateQueries({ queryKey: ['exerciseLogs'] });
       queryClient.invalidateQueries({ queryKey: ['exerciseWeekLogs'] });
     },
+    onError: (err) => showApiError(err),
   });
 
   const totalCaloriesToday = logs.reduce((sum, l) => sum + (l.calories_burned || 0), 0);

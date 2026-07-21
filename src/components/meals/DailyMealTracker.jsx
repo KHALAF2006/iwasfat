@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useT } from "@/i18n";
 import { calculateWaterGoal } from "@/lib/nutrition/engine";
 import { buildEngineProfile } from "./conditions";
+import { showApiError } from "@/lib/api-error";
 
 // Main meals: entity-native fields including *_completed.
 const MEAL_SLOTS = [
@@ -104,6 +105,7 @@ export default function DailyMealTracker({ subscriber }) {
       }
     },
     onSuccess: invalidate,
+    onError: (err) => showApiError(err),
   });
 
   const waterMutation = useMutation({
@@ -122,6 +124,7 @@ export default function DailyMealTracker({ subscriber }) {
       await base44.entities.DailyMealPlan.update(dailyPlan.id, { water_cups_consumed: nextVal });
     },
     onSuccess: invalidate,
+    onError: (err) => showApiError(err),
   });
 
   const renderSlot = (slot, isMain) => {

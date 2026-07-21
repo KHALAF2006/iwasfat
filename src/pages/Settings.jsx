@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Target, Save, Loader2, LogOut, Globe } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useT, useLanguage } from "@/i18n";
-import { useToast } from "@/components/ui/use-toast";
+import { showApiError } from "@/lib/api-error";
 import EntitlementGate from "@/components/subscription/EntitlementGate";
 import SubscriptionCard from "@/components/subscription/SubscriptionCard";
 import TelegramCard from "@/components/telegram/TelegramCard";
@@ -17,7 +17,6 @@ import TelegramCard from "@/components/telegram/TelegramCard";
 export default function Settings() {
   const queryClient = useQueryClient();
   const { logout } = useAuth();
-  const { toast } = useToast();
   const [saved, setSaved] = useState(false);
   const t = useT();
   const { language, setLanguage } = useLanguage();
@@ -50,9 +49,7 @@ export default function Settings() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     },
-    onError: () => {
-      toast({ title: t("settings.saveError"), variant: "destructive" });
-    },
+    onError: (err) => showApiError(err),
   });
 
   if (!subscriber || !form) {

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Scale, Target, Calendar, Activity, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useT, useLanguage } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 
 export default function Profile() {
   const queryClient = useQueryClient();
@@ -33,6 +34,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ["subscriber"] });
       setEditing(false);
     },
+    onError: (err) => showApiError(err),
   });
 
   const handleSave = () => {

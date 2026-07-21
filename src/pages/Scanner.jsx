@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Loader2, Check, Pencil } from "lucide-react";
 import moment from "moment";
 import { useT, useLanguage } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 import { evaluateFoodForProfile } from "@/lib/nutrition/engine";
 import MealWarnings from "@/components/meals/MealWarnings";
 import {
@@ -31,6 +32,7 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [mealType, setMealType] = useState("lunch");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const t = useT();
   const { language } = useLanguage();
   const indexItems = useFoodIndexItems();
@@ -134,26 +136,32 @@ export default function Scanner() {
   }, [result, profile, indexItems]);
 
   const saveToLog = async () => {
-    if (!result || !subscriber) return;
+    if (!result || !subscriber || saving) return;
+    setSaving(true);
+    try {
+      await base44.entities.FoodLog.create({
+        subscriber_id: subscriber.id,
+        date: moment().format("YYYY-MM-DD"),
+        meal_type: mealType,
+        followed_plan: false,
+        actual_food:
+          result.items?.map((i) => `${i.name} (${i.portion_grams}غ)`).join("، ") ||
+          result.analysis,
+        food_image: result.file_url,
+        calories: result.total_calories || 0,
+        protein: result.total_protein || 0,
+        carbs: result.total_carbs || 0,
+        fat: result.total_fat || 0,
+        ai_analysis: JSON.stringify(result),
+      });
 
-    await base44.entities.FoodLog.create({
-      subscriber_id: subscriber.id,
-      date: moment().format("YYYY-MM-DD"),
-      meal_type: mealType,
-      followed_plan: false,
-      actual_food:
-        result.items?.map((i) => `${i.name} (${i.portion_grams}غ)`).join("، ") ||
-        result.analysis,
-      food_image: result.file_url,
-      calories: result.total_calories || 0,
-      protein: result.total_protein || 0,
-      carbs: result.total_carbs || 0,
-      fat: result.total_fat || 0,
-      ai_analysis: JSON.stringify(result),
-    });
-
-    queryClient.invalidateQueries({ queryKey: ["foodLogs"] });
-    setSaved(true);
+      queryClient.invalidateQueries({ queryKey: ["foodLogs"] });
+      setSaved(true);
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -263,8 +271,10 @@ export default function Scanner() {
                   <span className="font-medium">{t("scanner.savedMsg")}</span>
                 </div>
               ) : (
-                <Button onClick={saveToLog} className="w-full bg-accent hover:bg-accent/90 text-white py-5">
-                  {evaluation.allowed
+                <Button onClick={saveToLog} disabled={saving} className="w-full bg-accent hover:bg-accent/90 text-white py-5">
+                  {saving ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {t("exercise.saving")}</>
+                  ) : evaluation.allowed
                     ? t("scanner.addToLog")
                     : t("mealFlow.addToLogAnyway")}
                 </Button>

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Send, Image as ImageIcon, ThumbsUp, Heart, Dumbbell, Users, Loader2 } from "lucide-react";
 import moment from "moment";
 import { useT } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 
 const POST_TYPE_KEYS = ["general", "meal", "progress", "question"];
 
@@ -55,6 +56,7 @@ export default function Group() {
       setNewPost("");
       setImageFile(null);
     },
+    onError: (err) => showApiError(err),
   });
 
   const handlePost = () => {
@@ -70,10 +72,14 @@ export default function Group() {
   };
 
   const handleReact = async (post, type) => {
-    const reactions = { ...post.reactions };
-    reactions[type] = (reactions[type] || 0) + 1;
-    await base44.entities.GroupPost.update(post.id, { reactions });
-    queryClient.invalidateQueries({ queryKey: ["groupPosts"] });
+    try {
+      const reactions = { ...post.reactions };
+      reactions[type] = (reactions[type] || 0) + 1;
+      await base44.entities.GroupPost.update(post.id, { reactions });
+      queryClient.invalidateQueries({ queryKey: ["groupPosts"] });
+    } catch (err) {
+      showApiError(err);
+    }
   };
 
   if (!subscriber?.group_id) {

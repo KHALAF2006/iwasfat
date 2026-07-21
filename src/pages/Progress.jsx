@@ -12,6 +12,7 @@ import MoodEnergyChart from "@/components/progress/MoodEnergyChart";
 import WaterChart from "@/components/progress/WaterChart";
 import ProgressStats from "@/components/progress/ProgressStats";
 import { useT } from "@/i18n";
+import { showApiError } from "@/lib/api-error";
 
 const PERIOD_KEYS = ["week", "month", "threeMonths", "all"];
 const PERIOD_VALUES = { week: "week", month: "month", threeMonths: "3months", all: "all" };
@@ -49,6 +50,7 @@ export default function Progress() {
       setWeight("");
       setWater("");
     },
+    onError: (err) => showApiError(err),
   });
 
   const handleSave = () => {
