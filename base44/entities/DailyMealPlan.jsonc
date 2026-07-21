@@ -195,14 +195,18 @@
       ]
     },
     "create": {
-      "user_condition": {
-        "role": {
-          "$in": [
-            "user",
-            "admin"
-          ]
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
-      }
+      ]
     },
     "update": {
       "$or": [
