@@ -42,7 +42,7 @@
     },
     "thumbnail": {
       "type": "string",
-      "description": "\u0635\u0648\u0631\u0629 \u0645\u0635\u063a\u0631\u0629"
+      "description": "\u0635\u0648\u0631\u0629 \u0645\u0635\u0637\u0631\u0629"
     },
     "target_groups": {
       "type": "array",
