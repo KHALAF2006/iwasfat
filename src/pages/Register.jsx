@@ -318,6 +318,15 @@ export default function Register() {
                         </div>
                       </>
                     )}
+                    {form.birth_date && (
+                      <div className="col-span-2 border-t border-border/50 pt-3">
+                        <p className="text-muted-foreground">{t("register.dailyCalories")}</p>
+                        <p className="font-bold text-accent text-lg" dir="ltr">
+                          {calculateDailyCalories(weightNum, heightNum, Math.max(10, new Date().getFullYear() - new Date(form.birth_date).getFullYear()), form.gender, form.activity_level)} {t("common.cal")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("register.dailyCaloriesNote")}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

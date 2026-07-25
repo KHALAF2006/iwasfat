@@ -82,6 +82,7 @@ export default function Navbar() {
         <button
           className={`md:hidden ${scrolled ? "text-foreground" : "text-white"}`}
           onClick={() => setOpen(!open)}
+          aria-label={open ? "Close menu" : "Open menu"}
         >
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>

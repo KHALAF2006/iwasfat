@@ -174,6 +174,8 @@ export default {
     idealWeight: "Ideal weight",
     lossGoal: "Loss goal",
     approxDuration: "Approx. duration",
+    dailyCalories: "Daily calorie target",
+    dailyCaloriesNote: "Computed via Mifflin-St Jeor with a safety floor — never below 1200/1500 kcal",
     createAccount: "Create account",
     saveChanges: "Save changes",
     disclaimerTitle: "⚕️ Health notice",

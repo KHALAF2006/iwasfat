@@ -174,6 +174,8 @@ export default {
     idealWeight: "الوزن المثالي",
     lossGoal: "هدف الخسارة",
     approxDuration: "المدة التقريبية",
+    dailyCalories: "هدف السعرات اليومي",
+    dailyCaloriesNote: "محسوب وفق معادلة Mifflin-St Jeor مع هامش أمان — لا يقل عن 1200/1500 سعرة",
     createAccount: "إنشاء الحساب",
     saveChanges: "حفظ التعديلات",
     disclaimerTitle: "⚕️ تنبيه صحي",
