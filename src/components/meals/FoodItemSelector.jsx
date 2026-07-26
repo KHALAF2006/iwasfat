@@ -43,6 +43,9 @@ export default function FoodItemSelector({ subscriber, onSelect }) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [category, setCategory] = useState(null);
+  // Last-tapped item: gives instant visual feedback before the parent
+  // advances the step (120ms later).
+  const [pickedId, setPickedId] = useState(null);
   // The slim index (~2 MB) is loaded as an async chunk on first use so the
   // main bundle stays lean.
   const items = useFoodIndexItems();
@@ -137,15 +140,23 @@ export default function FoodItemSelector({ subscriber, onSelect }) {
               : { allowed: true, warnings: [] };
             const hasDanger = !evalResult.allowed;
             const hasCaution = evalResult.warnings.length > 0;
+            const picked = pickedId === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onSelect(item, evalResult)}
-                className="w-full text-start bg-card border border-border rounded-xl p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                onClick={() => {
+                  setPickedId(item.id);
+                  onSelect(item, evalResult);
+                }}
+                className={`w-full text-start rounded-xl p-3 border transition-colors ${
+                  picked
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                    : "bg-card border-border hover:border-primary/50 hover:bg-primary/5"
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-sm text-foreground">
+                  <p className={`font-medium text-sm ${picked ? "text-primary font-semibold" : "text-foreground"}`}>
                     {language === "ar" ? item.name_ar : item.name_en || item.name_ar}
                   </p>
                   {(hasDanger || hasCaution) && (
@@ -160,11 +171,16 @@ export default function FoodItemSelector({ subscriber, onSelect }) {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {item.calories} {t("common.cal")} ·{" "}
-                  {language === "ar"
-                    ? item.serving_desc_ar || `${item.portion_grams}${t("mealFlow.gram")}`
-                    : item.serving_desc_en || `${item.portion_grams}g`}
+                <p className="mt-0.5">
+                  <span className="text-sm font-bold text-primary">
+                    {item.calories} {t("common.cal")}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {" · "}
+                    {language === "ar"
+                      ? item.serving_desc_ar || `${item.portion_grams}${t("mealFlow.gram")}`
+                      : item.serving_desc_en || `${item.portion_grams}g`}
+                  </span>
                 </p>
               </button>
             );

@@ -36,20 +36,25 @@ export default function KitchenSelector({ selectedKitchenId, onSelect }) {
         key={id ?? "all"}
         type="button"
         onClick={() => onSelect(id)}
-        className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-xs font-medium transition-all ${
+        className={`relative flex flex-col items-center justify-center gap-1 p-2 min-h-[44px] rounded-xl border text-[11px] font-medium transition-all ${
           active
-            ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+            ? "border-primary bg-primary/10 text-primary font-semibold ring-2 ring-primary/30"
             : "border-border bg-card hover:bg-secondary text-foreground"
         }`}
       >
-        <span className="text-2xl">{icon}</span>
+        {active && (
+          <span className="absolute top-1 end-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] leading-none flex items-center justify-center">
+            ✓
+          </span>
+        )}
+        <span className="text-xl">{icon}</span>
         <span className="text-center leading-tight">{label}</span>
       </button>
     );
   };
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
       {renderButton(null, "🌍", t("mealFlow.allKitchens"))}
       {sorted.map((k) =>
         renderButton(

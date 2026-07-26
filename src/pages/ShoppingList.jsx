@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Share2, Trash2, Sparkles, Loader2, FileDown, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Share2, Trash2, Sparkles, Loader2, FileDown, Camera, CheckCircle2, Circle } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { useT, useLanguage } from '@/i18n';
 import { useToast } from '@/components/ui/use-toast';
 import { showApiError } from '@/lib/api-error';
+import { exportListAsImage, exportListAsPDF } from '@/lib/shopping-export';
 
 const CATEGORY_ORDER = {
   meat_protein: 1,
@@ -22,11 +23,24 @@ const CATEGORY_ORDER = {
   other: 7,
 };
 
+// Per-item avatar tile: category → emoji + soft background.
+const CATEGORY_TILE = {
+  meat_protein: { emoji: '🥩', bg: 'bg-red-50' },
+  vegetables_fruits: { emoji: '🥬', bg: 'bg-green-50' },
+  dairy: { emoji: '🧀', bg: 'bg-amber-50' },
+  grains_legumes: { emoji: '🍞', bg: 'bg-yellow-50' },
+  oils_spices: { emoji: '🧴', bg: 'bg-orange-50' },
+  drinks: { emoji: '🥤', bg: 'bg-sky-50' },
+  other: { emoji: '🛒', bg: 'bg-secondary' },
+};
+
 export default function ShoppingList() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState({ category: 'other', item_name: '', quantity: '' });
   const [generating, setGenerating] = useState(false);
-  const [exportingPDF, setExportingPDF] = useState(false);
+  // null | 'pdf' | 'image' — which client-side export is currently running.
+  const [exporting, setExporting] = useState(null);
+  const exportRef = useRef(null);
   const queryClient = useQueryClient();
   const t = useT();
   const { language } = useLanguage();
@@ -120,22 +134,26 @@ export default function ShoppingList() {
     }
   };
 
-  const exportPDF = async () => {
-    if (!shoppingList) return;
-    setExportingPDF(true);
+  // Client-side export: renders the live list DOM via html2canvas, so the
+  // output preserves exactly what the user sees — Arabic text, RTL layout,
+  // and the current language (unlike the old backend exportShoppingPDF,
+  // which produced transliterated English gibberish).
+  const handleExport = async (kind) => {
+    if (!shoppingList || !exportRef.current) return;
+    setExporting(kind);
     try {
-      const response = await base44.functions.invoke('exportShoppingPDF', {
-        shopping_list_id: shoppingList.id
-      });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${t('shopping.filePrefix')}-${shoppingList.week_start_date}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const base = `${t('shopping.filePrefix')}-${shoppingList.week_start_date}`;
+      if (kind === 'pdf') {
+        await exportListAsPDF(exportRef.current, `${base}.pdf`);
+      } else {
+        await exportListAsImage(exportRef.current, `${base}.png`);
+      }
+      toast({ title: t('shoppingExport.exportDone') });
+    } catch (err) {
+      console.error('Export failed:', err);
+      toast({ title: t('shoppingExport.exportFailed'), variant: 'destructive' });
     } finally {
-      setExportingPDF(false);
+      setExporting(null);
     }
   };
 
@@ -235,23 +253,41 @@ export default function ShoppingList() {
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {generating ? t('shopping.generating') : t('shopping.refreshAI')}
         </Button>
-        <Button onClick={exportPDF} variant="outline" disabled={exportingPDF} size="icon" title={t('shopping.exportPDF')}>
-          {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+        <Button
+          onClick={() => handleExport('pdf')}
+          variant="outline"
+          disabled={exporting !== null}
+          size="icon"
+          title={exporting === 'pdf' ? t('shoppingExport.exporting') : t('shoppingExport.exportPdf')}
+        >
+          {exporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+        </Button>
+        <Button
+          onClick={() => handleExport('image')}
+          variant="outline"
+          disabled={exporting !== null}
+          size="icon"
+          title={exporting === 'image' ? t('shoppingExport.exporting') : t('shoppingExport.saveAsImage')}
+        >
+          {exporting === 'image' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
         </Button>
         <Button onClick={shareList} variant="outline" size="icon" title={t('shopping.share')}>
           <Share2 className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* الفئات والعناصر */}
-      <div className="space-y-4">
+      {/* الفئات والعناصر — this container is what gets exported as image/PDF.
+          It always shows all items (no collapsed/truncated content on this page). */}
+      <div ref={exportRef} className="space-y-4 bg-background p-2 rounded-xl">
         {sortedCategories.map(categoryKey => (
           <Card key={categoryKey}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{t(`shopping.categories.${categoryKey}`)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
-              {groupedItems[categoryKey].map((item) => (
+              {groupedItems[categoryKey].map((item) => {
+                const tile = CATEGORY_TILE[item.category] || CATEGORY_TILE.other;
+                return (
                 <div
                   key={item._index}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
@@ -259,6 +295,9 @@ export default function ShoppingList() {
                   }`}
                   onClick={() => toggleItemMutation.mutate(item._index)}
                 >
+                  <div className={`w-9 h-9 rounded-lg ${tile.bg} flex items-center justify-center text-lg flex-shrink-0`}>
+                    {tile.emoji}
+                  </div>
                   {item.is_checked
                     ? <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                     : <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
@@ -278,7 +317,8 @@ export default function ShoppingList() {
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         ))}

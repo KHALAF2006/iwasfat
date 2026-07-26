@@ -206,32 +206,35 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("mealFlow.title")}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-md flex flex-col max-h-[85vh] overflow-hidden">
+          {/* Fixed header: title + progress + step title (never scrolls) */}
+          <div className="shrink-0">
+            <DialogHeader>
+              <DialogTitle>{t("mealFlow.title")}</DialogTitle>
+            </DialogHeader>
 
-          {/* Progress indicator */}
-          <div className="flex items-center gap-2 mb-1">
-            <div className="flex gap-1 flex-1">
-              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 flex-1 rounded-full transition-colors ${
-                    i < step ? "bg-primary" : "bg-secondary"
-                  }`}
-                />
-              ))}
+            {/* Progress indicator */}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="flex gap-1 flex-1">
+                {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      i < step ? "bg-primary" : "bg-secondary"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                {t("mealFlow.stepOf", { step, total: TOTAL_STEPS })}
+              </span>
             </div>
-            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-              {t("mealFlow.stepOf", { step, total: TOTAL_STEPS })}
-            </span>
+            <p className="text-sm font-semibold text-foreground mb-3">
+              {stepTitles[step - 1]}
+            </p>
           </div>
-          <p className="text-sm font-semibold text-foreground mb-3">
-            {stepTitles[step - 1]}
-          </p>
 
-          <div className="min-h-[280px]">
+          <div className="flex-1 overflow-y-auto min-h-0 py-1">
             {/* Plain keyed div: step content renders synchronously with the
                 `step` state. Do NOT use framer-motion or CSS enter/exit
                 animations here — paused animations (background tabs, reduced
@@ -445,8 +448,8 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
               </div>
           </div>
 
-          {/* Footer navigation */}
-          <div className="flex gap-2 pt-2">
+          {/* Footer navigation — sticky bottom bar, always visible */}
+          <div className="shrink-0 border-t border-border bg-background pt-3 flex gap-2">
             {step > 1 ? (
               <Button type="button" variant="outline" onClick={back} className="gap-1">
                 <BackIcon className="w-4 h-4" />

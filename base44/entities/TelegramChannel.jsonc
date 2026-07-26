@@ -1,0 +1,58 @@
+{
+  "name": "TelegramChannel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "اسم القناة (للعرض في لوحة الإدارة)"
+    },
+    "bot_token": {
+      "type": "string",
+      "description": "توكن بوت تيليجرام — سرّي، لا يظهر إلا للمدير"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "معرف القناة في تيليجرام (@mychannel أو -100…)"
+    },
+    "description": {
+      "type": "string",
+      "description": "وصف القناة (اختياري)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "هل القناة مفعّلة للإرسال"
+    },
+    "notes": {
+      "type": "string",
+      "description": "ملاحظات داخلية للمدير"
+    }
+  },
+  "required": [
+    "name",
+    "bot_token",
+    "channel_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

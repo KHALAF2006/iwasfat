@@ -13,6 +13,9 @@ export default function MealSelector({ meals = [], isLoading, planMealId, onSele
   const t = useT();
   const { language } = useLanguage();
   const [search, setSearch] = useState("");
+  // Last-tapped meal: instant visual feedback before the parent advances
+  // the step (120ms later).
+  const [pickedId, setPickedId] = useState(null);
 
   const filtered = useMemo(() => {
     const q = normalizeText(search);
@@ -59,15 +62,23 @@ export default function MealSelector({ meals = [], isLoading, planMealId, onSele
               ? Math.max(...sizes.map((s) => s.calories || 0))
               : null;
             const isPlanMeal = planMealId && meal.id === planMealId;
+            const picked = pickedId === meal.id;
             return (
               <button
                 key={meal.id}
                 type="button"
-                onClick={() => onSelect(meal)}
-                className="w-full text-start bg-card border border-border rounded-xl p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                onClick={() => {
+                  setPickedId(meal.id);
+                  onSelect(meal);
+                }}
+                className={`w-full text-start rounded-xl p-3 border transition-colors ${
+                  picked
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                    : "bg-card border-border hover:border-primary/50 hover:bg-primary/5"
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-sm text-foreground">
+                  <p className={`font-medium text-sm ${picked ? "text-primary font-semibold" : "text-foreground"}`}>
                     {language === "ar" ? meal.name : meal.name_en || meal.name}
                   </p>
                   {isPlanMeal && (
@@ -76,14 +87,18 @@ export default function MealSelector({ meals = [], isLoading, planMealId, onSele
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {sizes.length > 0 && (
-                    <>
+                {sizes.length > 0 && (
+                  <p className="mt-0.5">
+                    <span className="text-sm font-bold text-primary">
                       {minCal === maxCal ? minCal : `${minCal}–${maxCal}`}{" "}
-                      {t("common.cal")} · {sizes.map((s) => s.size_name).join(" / ")}
-                    </>
-                  )}
-                </p>
+                      {t("common.cal")}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {" · "}
+                      {sizes.map((s) => s.size_name).join(" / ")}
+                    </span>
+                  </p>
+                )}
               </button>
             );
           })}

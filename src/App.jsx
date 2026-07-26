@@ -38,6 +38,7 @@ import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminDailyPlans from './pages/admin/AdminDailyPlans';
 import AdminPipeline from './pages/admin/AdminPipeline';
 import AdminFoodDatabase from './pages/admin/AdminFoodDatabase';
+import AdminTelegram from './pages/admin/AdminTelegram';
 import Exercise from './pages/Exercise';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
@@ -82,6 +83,7 @@ const AppRoutes = () => {
           <Route path="/admin/food-database" element={<AdminFoodDatabase />} />
           <Route path="/admin/kitchens" element={<AdminKitchens />} />
           <Route path="/admin/notifications" element={<AdminNotifications />} />
+          <Route path="/admin/telegram" element={<AdminTelegram />} />
         </Route>
       </Route>
 

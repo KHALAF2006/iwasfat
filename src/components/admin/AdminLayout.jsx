@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import {
   LayoutDashboard, Users, FolderOpen, Utensils, Video, Star, ChefHat,
   UtensilsCrossed, CalendarDays, Bell, Search, PanelRightClose, PanelRightOpen,
-  ChevronLeft, Apple, Columns3,
+  ChevronLeft, Apple, Columns3, Radio,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useT } from "@/i18n";
@@ -25,6 +25,7 @@ const NAV_ICONS = {
   testimonials: Star,
   foodDatabase: Apple,
   notifications: Bell,
+  telegram: Radio,
 };
 
 // Sidebar sections: نظرة عامة / العمليات / المحتوى / النظام
@@ -48,6 +49,7 @@ const NAV_SECTIONS = [
   { sectionKey: "system", items: [
     { path: "/admin/food-database", key: "foodDatabase", emoji: "🍎", labelKey: "adminPro.nav.foodDatabase" },
     { path: "/admin/notifications", key: "notifications" },
+    { path: "/admin/telegram", key: "telegram", emoji: "📡", labelKey: "telegramAdmin.navLabel" },
   ]},
 ];
 
