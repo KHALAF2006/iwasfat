@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, ChevronRight, ChevronLeft, PenLine } from "lucide-react";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { useT, useLanguage } from "@/i18n";
 import { evaluateFoodForProfile } from "@/lib/nutrition/engine";
@@ -37,7 +36,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
   const subscriberId = subscriber?.id;
 
   const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(1);
   const [mealType, setMealType] = useState("");
   const [kitchenId, setKitchenId] = useState(null);
   const [kitchenTouched, setKitchenTouched] = useState(false);
@@ -66,7 +64,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
   useEffect(() => {
     if (!open) return;
     setStep(1);
-    setDirection(1);
     setMealType(initialMealType || "");
     setKitchenId(null);
     setKitchenTouched(false);
@@ -176,7 +173,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
 
   // ── navigation ──────────────────────────────────────────────────────────
   const goTo = (next) => {
-    setDirection(next > step ? 1 : -1);
     setStep(next);
   };
   const next = () => goTo(Math.min(step + 1, TOTAL_STEPS));
@@ -203,11 +199,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
     t("mealFlow.steps.check"),
     t("mealFlow.steps.confirm"),
   ];
-
-  const slide = {
-    initial: (dir) => ({ opacity: 0, x: (isRTL ? -1 : 1) * dir * 40 }),
-    animate: { opacity: 1, x: 0 },
-  };
 
   const BackIcon = isRTL ? ChevronLeft : ChevronRight;
   const NextIcon = isRTL ? ChevronRight : ChevronLeft;
@@ -241,19 +232,12 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
           </p>
 
           <div className="min-h-[280px]">
-            {/* Direct keyed mount: step content must render synchronously with
-                the `step` state. Do NOT wrap this in AnimatePresence mode="wait"
-                with dynamic exit variants — a stuck exit animation in
-                framer-motion 11 leaves the previous step mounted forever and the
-                incoming step never mounts (the production bug this fixes). */}
-            <motion.div
-              key={step}
-              custom={direction}
-              variants={slide}
-              initial="initial"
-              animate="animate"
-              transition={{ duration: 0.18, ease: "easeOut" }}
-            >
+            {/* Plain keyed div: step content renders synchronously with the
+                `step` state. Do NOT use framer-motion or CSS enter/exit
+                animations here — paused animations (background tabs, reduced
+                motion) leave step content invisible (the production bug this
+                fixes). */}
+            <div key={step}>
                 {step === 1 && (
                   <MealTypeSelector
                     selectedType={mealType}
@@ -458,7 +442,7 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
                     </p>
                   </div>
                 )}
-              </motion.div>
+              </div>
           </div>
 
           {/* Footer navigation */}
