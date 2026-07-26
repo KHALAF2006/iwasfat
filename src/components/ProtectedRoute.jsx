@@ -28,7 +28,7 @@ export default function ProtectedRoute({ fallback = <DefaultFallback /> }) {
 
   useEffect(() => {
     if (shouldRedirectToLogin) {
-      navigate('/login', { replace: true });
+      navigate('/auth/login', { replace: true });
     }
   }, [shouldRedirectToLogin, navigate]);
 

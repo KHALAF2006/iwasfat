@@ -221,7 +221,7 @@ export default function RegisterAccount() {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/15">
             <Clock3 className="h-7 w-7" />
           </span>
-          <Link to="/login" className="w-full">
+          <Link to="/auth/login" className="w-full">
             <Button variant="outline" className="w-full">
               {t('auth.pendingBackToLogin')}
             </Button>
@@ -282,7 +282,7 @@ export default function RegisterAccount() {
       footer={
         <span>
           {t('auth.haveAccount')}{' '}
-          <Link to="/login" className="font-medium text-accent hover:underline">
+          <Link to="/auth/login" className="font-medium text-accent hover:underline">
             {t('auth.login')}
           </Link>
         </span>

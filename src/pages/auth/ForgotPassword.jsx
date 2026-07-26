@@ -81,7 +81,7 @@ export default function ForgotPassword() {
             <Button variant="outline" onClick={handleResend} disabled={loading} className="w-full">
               {loading ? t('auth.sendingResetLink') : t('auth.resendEmail')}
             </Button>
-            <Link to="/login" className="w-full">
+            <Link to="/auth/login" className="w-full">
               <Button variant="ghost" className="w-full">
                 {t('auth.backToLogin')}
               </Button>
@@ -121,7 +121,7 @@ export default function ForgotPassword() {
         </SubmitButton>
 
         <div className="text-center">
-          <Link to="/login" className="text-sm text-accent hover:underline">
+          <Link to="/auth/login" className="text-sm text-accent hover:underline">
             {t('auth.backToLogin')}
           </Link>
         </div>

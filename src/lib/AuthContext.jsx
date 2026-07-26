@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }) => {
   const navigateToLogin = () => {
     // Route to the custom in-app login page. AuthProvider lives outside the
     // Router, so a full navigation is used instead of useNavigate.
-    window.location.assign('/login');
+    window.location.assign('/auth/login');
   };
 
   return (

@@ -78,7 +78,7 @@ export default function ResetPassword() {
                 {t('auth.requestNewLink')}
               </Button>
             </Link>
-            <Link to="/login" className="w-full">
+            <Link to="/auth/login" className="w-full">
               <Button variant="ghost" className="w-full">
                 {t('auth.backToLogin')}
               </Button>
@@ -97,7 +97,7 @@ export default function ResetPassword() {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
             <CheckCircle2 className="h-7 w-7" />
           </span>
-          <Link to="/login" className="w-full">
+          <Link to="/auth/login" className="w-full">
             <Button className="w-full bg-accent hover:bg-accent/90 text-white">
               {t('auth.login')}
             </Button>

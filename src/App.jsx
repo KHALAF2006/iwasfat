@@ -58,7 +58,7 @@ const AppRoutes = () => {
       <Route path="/register" element={<Register />} />
 
       {/* Public — custom auth flow */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<RegisterAccount />} />
       <Route path="/auth/forgot" element={<ForgotPassword />} />
       <Route path="/auth/reset" element={<ResetPassword />} />
