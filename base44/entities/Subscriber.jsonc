@@ -10,6 +10,10 @@
       "type": "string",
       "description": "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a"
     },
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id of the record owner - set by completeOnboarding; lets RLS match owners of service-created rows"
+    },
     "gender": {
       "type": "string",
       "enum": [
@@ -212,6 +216,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "user_id": "{{user.id}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
@@ -236,6 +243,9 @@
       "$or": [
         {
           "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_id": "{{user.id}}"
         },
         {
           "user_condition": {

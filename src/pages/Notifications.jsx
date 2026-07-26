@@ -23,7 +23,7 @@ export default function Notifications() {
     queryKey: ["subscriber"],
     queryFn: async () => {
       const me = await base44.auth.me();
-      const subs = await base44.entities.Subscriber.filter({ created_by: me.email });
+      const subs = await base44.entities.Subscriber.filter({ email: me.email });
       return subs[0] || null;
     },
   });

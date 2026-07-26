@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const loadSubscriber = useCallback(async (email) => {
     try {
-      const subs = await base44.entities.Subscriber.filter({ created_by: email });
+      const subs = await base44.entities.Subscriber.filter({ email: email });
       setSubscriber(subs[0] || null);
       return subs[0] || null;
     } catch (error) {
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
     (async () => {
       try {
         const deviceId = getDeviceId();
-        const subs = await base44.entities.Subscriber.filter({ created_by: user.email });
+        const subs = await base44.entities.Subscriber.filter({ email: user.email });
         const row = subs[0];
         if (!row) return;
         if (row.active_device_id && row.active_device_id !== deviceId) {

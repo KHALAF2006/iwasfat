@@ -31,7 +31,7 @@ export default function Progress() {
   const { data: subscriber } = useQuery({
     queryKey: ["subscriber"],
     queryFn: async () => {
-      const subs = await base44.entities.Subscriber.filter({ created_by: (await base44.auth.me()).email });
+      const subs = await base44.entities.Subscriber.filter({ email: (await base44.auth.me()).email });
       return subs[0] || null;
     },
   });

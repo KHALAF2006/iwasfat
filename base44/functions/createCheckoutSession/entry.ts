@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (!plan_id) return Response.json({ error: 'plan_id required' }, { status: 400 });
 
     // Caller may only check out for their own subscriber record
-    const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+    const own = await base44.asServiceRole.entities.Subscriber.filter({ email: user.email });
     const subscriber = own[0];
     if (!subscriber) return Response.json({ error: 'No subscriber record for this user' }, { status: 404 });
 

@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     // IDOR fix: verify the caller owns this list (or is an admin)
     if (user.role !== 'admin') {
-      const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+      const own = await base44.asServiceRole.entities.Subscriber.filter({ email: user.email });
       const mySubscriber = own[0];
       if (!mySubscriber || mySubscriber.id !== list.subscriber_id) {
         return Response.json({ error: 'Forbidden: not your shopping list' }, { status: 403 });

@@ -68,7 +68,7 @@ export default function Register() {
         return;
       }
       try {
-        const subs = await base44.entities.Subscriber.filter({ created_by: user.email });
+        const subs = await base44.entities.Subscriber.filter({ email: user.email });
         const existing = subs[0];
         if (existing) {
           setExistingSubscriber(existing);

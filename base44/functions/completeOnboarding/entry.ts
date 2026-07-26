@@ -127,12 +127,27 @@ Deno.serve(async (req) => {
     };
 
     const db = base44.asServiceRole.entities;
-    const own = await db.Subscriber.filter({ created_by: user.email });
-    const existing = own[0];
+    const own = await db.Subscriber.filter({ email: user.email });
+
+    // Dedupe: historical double-onboarding created multiple rows per email
+    // (the old lookup matched created_by, which is the service identity for
+    // function-created rows, so it never found them). Keep the strongest row —
+    // active beats trial beats expired/cancelled, then the latest end date —
+    // and remove the rest so one email = one subscriber, always.
+    const rank = (s) => {
+      const statusRank = { active: 3, trial: 2, expired: 1, cancelled: 0 }[s.subscription_status] ?? 0;
+      const end = Date.parse(s.subscription_end_date || s.trial_ends_at || '') || 0;
+      return statusRank * 1e13 + end;
+    };
+    const sorted = [...own].sort((a, b) => rank(b) - rank(a));
+    const existing = sorted[0];
+    for (const dup of sorted.slice(1)) {
+      await db.Subscriber.delete(dup.id).catch(() => null);
+    }
 
     // ---- Existing subscriber: profile update ONLY, never touch billing/trial ----
     if (existing) {
-      await db.Subscriber.update(existing.id, profileFields);
+      await db.Subscriber.update(existing.id, { ...profileFields, user_id: user.id });
       const updated = { ...existing, ...profileFields };
       let group_name = null;
       if (existing.group_id) {
@@ -170,6 +185,7 @@ Deno.serve(async (req) => {
 
     const created = await db.Subscriber.create({
       email: user.email,
+      user_id: user.id,
       ...profileFields,
       subscription_status: 'trial',
       trial_used: true,

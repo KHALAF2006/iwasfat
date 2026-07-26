@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'TELEGRAM_BOT_USERNAME not configured' }, { status: 500 });
     }
 
-    const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+    const own = await base44.asServiceRole.entities.Subscriber.filter({ email: user.email });
     const subscriber = own[0];
     if (!subscriber) return Response.json({ error: 'No subscriber record for this user' }, { status: 404 });
 

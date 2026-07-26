@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Caller may only open a portal for their own subscriber record
-    const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+    const own = await base44.asServiceRole.entities.Subscriber.filter({ email: user.email });
     const subscriber = own[0];
     if (!subscriber) return Response.json({ error: 'No subscriber record for this user' }, { status: 404 });
     if (!subscriber.stripe_customer_id) {

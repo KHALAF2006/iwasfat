@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
     // Ownership check (admins bypass)
     if (user.role !== 'admin') {
-      const own = await base44.asServiceRole.entities.Subscriber.filter({ created_by: user.email });
+      const own = await base44.asServiceRole.entities.Subscriber.filter({ email: user.email });
       const mySubscriber = own[0];
       if (!mySubscriber || mySubscriber.id !== subscriber_id) {
         return Response.json({ error: 'Forbidden: not your subscriber record' }, { status: 403 });
