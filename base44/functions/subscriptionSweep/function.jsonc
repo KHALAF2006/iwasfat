@@ -1,0 +1,11 @@
+{
+  "automations": [
+    {
+      "type": "scheduled",
+      "cron_expression": "17 6 * * *",
+      "schedule_mode": "recurring",
+      "is_active": true,
+      "function_args": {}
+    }
+  ]
+}

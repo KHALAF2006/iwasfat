@@ -13,12 +13,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 //   message via the Telegram Bot API. Telegram failures are logged and never
 //   crash the run.
 
-// checkEntitlement pattern (also used by sweepTrials / frontend EntitlementGate):
-// allowed = status active
+// checkEntitlement pattern (also used by subscriptionSweep / frontend EntitlementGate):
+// allowed = status active AND (no subscription_end_date [legacy unlimited] OR now < end)
 //        OR (trial   AND now < trial_ends_at,   or trial_ends_at unset = legacy trial)
 //        OR (expired AND grace_ends_at set AND now < grace_ends_at)
 function isEntitled(sub, now) {
-  if (sub.subscription_status === 'active') return true;
+  if (sub.subscription_status === 'active') {
+    return !sub.subscription_end_date || new Date(sub.subscription_end_date) > now;
+  }
   if (sub.subscription_status === 'trial') {
     if (!sub.trial_ends_at) return true; // legacy trial set client-side; sweep owns lifecycle
     return new Date(sub.trial_ends_at) > now;

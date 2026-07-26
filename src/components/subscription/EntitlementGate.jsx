@@ -3,18 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Lock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// checkEntitlement — same rule as the server-side pattern in
-// base44/functions/sendDailyReminders:
-//   allowed = status active
-//          OR (trial   AND (no trial_ends_at [legacy] OR now < trial_ends_at))
-//          OR (expired AND grace_ends_at set AND now < grace_ends_at)
+// checkEntitlement — unified rule on the real billing fields, matching
+// base44/functions/sendDailyReminders and subscriptionSweep:
+//   active  -> allowed if no subscription_end_date OR end > now
+//   trial   -> allowed if no end OR end > now, where end = trial_ends_at || subscription_end_date
+//   expired -> allowed only while grace_ends_at > now
+//   else    -> not allowed
 export function isEntitled(subscriber, now = new Date()) {
   if (!subscriber) return false;
   const status = subscriber.subscription_status;
-  if (status === "active") return true;
+  if (status === "active") {
+    return (
+      !subscriber.subscription_end_date ||
+      new Date(subscriber.subscription_end_date) > now
+    );
+  }
   if (status === "trial") {
-    if (!subscriber.trial_ends_at) return true; // legacy client-side trial
-    return new Date(subscriber.trial_ends_at) > now;
+    const end = subscriber.trial_ends_at || subscriber.subscription_end_date;
+    if (!end) return true; // legacy client-side trial
+    return new Date(end) > now;
   }
   if (status === "expired") {
     return !!subscriber.grace_ends_at && new Date(subscriber.grace_ends_at) > now;

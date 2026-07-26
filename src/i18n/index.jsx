@@ -1,8 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import ar from './ar';
 import en from './en';
+import { ar as authAr, en as authEn } from './auth';
+import { ar as onboardingAr, en as onboardingEn } from './onboarding';
+import { ar as adminSubsAr, en as adminSubsEn } from './adminSubs';
 
-const dictionaries = { ar, en };
+// Feature dictionaries live in their own files (auth.js, onboarding.js,
+// adminSubs.js) to keep parallel work conflict-free. Each exports a single
+// top-level block ({ auth: {...} } etc.) which is merged over the base
+// dictionary here — new keys override, untouched base keys survive.
+const mergeFeature = (base, ...features) => {
+  const out = { ...base };
+  for (const f of features) {
+    for (const [k, v] of Object.entries(f || {})) {
+      out[k] = { ...(out[k] || {}), ...v };
+    }
+  }
+  return out;
+};
+
+const dictionaries = {
+  ar: mergeFeature(ar, authAr, onboardingAr, adminSubsAr),
+  en: mergeFeature(en, authEn, onboardingEn, adminSubsEn),
+};
 const STORAGE_KEY = 'iwasfat_language';
 
 const LanguageContext = createContext(null);

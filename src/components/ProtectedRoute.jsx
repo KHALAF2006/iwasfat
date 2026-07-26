@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { useT } from '@/i18n';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -14,11 +14,12 @@ const DefaultFallback = () => (
 /**
  * Route guard for authenticated areas of the app.
  * - Shows a spinner while auth state is being resolved.
- * - Redirects anonymous visitors to the Base44 login flow.
+ * - Redirects anonymous visitors to the custom /login page.
  * - Renders nested routes (<Outlet />) for authenticated users.
  */
 export default function ProtectedRoute({ fallback = <DefaultFallback /> }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, navigateToLogin, checkAppState } = useAuth();
+  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkAppState } = useAuth();
+  const navigate = useNavigate();
   const t = useT();
 
   const shouldRedirectToLogin =
@@ -27,9 +28,9 @@ export default function ProtectedRoute({ fallback = <DefaultFallback /> }) {
 
   useEffect(() => {
     if (shouldRedirectToLogin) {
-      navigateToLogin();
+      navigate('/login', { replace: true });
     }
-  }, [shouldRedirectToLogin, navigateToLogin]);
+  }, [shouldRedirectToLogin, navigate]);
 
   if (isLoadingAuth || !authChecked) {
     return fallback;

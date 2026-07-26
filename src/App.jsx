@@ -13,6 +13,12 @@ import { useAuth } from '@/lib/AuthContext';
 import Landing from './pages/Landing';
 import Register from './pages/Register';
 
+// Custom auth pages
+import Login from './pages/auth/Login';
+import RegisterAccount from './pages/auth/RegisterAccount';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+
 // App pages
 import AppLayout from './components/app/AppLayout';
 import Dashboard from './pages/Dashboard';
@@ -50,6 +56,12 @@ const AppRoutes = () => {
       {/* Public — reachable for anonymous visitors */}
       <Route path="/" element={<Landing />} />
       <Route path="/register" element={<Register />} />
+
+      {/* Public — custom auth flow */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/register" element={<RegisterAccount />} />
+      <Route path="/auth/forgot" element={<ForgotPassword />} />
+      <Route path="/auth/reset" element={<ResetPassword />} />
 
       {/* Subscriber app — requires authentication (+ onboarding gate inside AppLayout) */}
       <Route element={<ProtectedRoute />}>

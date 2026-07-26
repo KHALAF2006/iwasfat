@@ -1,7 +1,10 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { enforceSessionOnlyOnBoot, getDeviceId } from '@/lib/auth-session';
+import { toast } from '@/components/ui/use-toast';
+import { useT } from '@/i18n';
 
 const AuthContext = createContext();
 
@@ -14,6 +17,8 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const t = useT();
+  const deviceCheckDone = useRef(false);
 
   const loadSubscriber = useCallback(async (email) => {
     try {
@@ -58,6 +63,14 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
 
+      // "Remember me" OFF enforcement: if the user chose a session-only login
+      // and the browser was closed (sessionStorage wiped), drop the stored
+      // Base44 token so they must sign in again.
+      const sessionCleared = enforceSessionOnlyOnBoot();
+      if (sessionCleared) {
+        try { base44.auth.logout(); } catch { /* token cleanup is best-effort */ }
+      }
+
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
       const appClient = createAxiosClient({
@@ -65,7 +78,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'X-App-Id': appParams.appId
         },
-        token: appParams.token, // Include token if available
+        token: sessionCleared ? undefined : appParams.token, // Include token if available
         interceptResponses: true
       });
 
@@ -74,7 +87,7 @@ export const AuthProvider = ({ children }) => {
         setAppPublicSettings(publicSettings);
 
         // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
+        if (appParams.token && !sessionCleared) {
           await checkUserAuth();
         } else {
           setUser(null);
@@ -132,6 +145,35 @@ export const AuthProvider = ({ children }) => {
     checkAppState();
   }, [checkAppState]);
 
+  // Single-device binding: once a non-admin user is authenticated, bind their
+  // Subscriber row to this browser's device id. If another device already
+  // holds the binding, sign this session out.
+  useEffect(() => {
+    if (deviceCheckDone.current) return;
+    if (!isAuthenticated || !user?.email) return;
+    deviceCheckDone.current = true;
+    if (user.role === 'admin') return; // admins are exempt from device binding
+
+    (async () => {
+      try {
+        const deviceId = getDeviceId();
+        const subs = await base44.entities.Subscriber.filter({ created_by: user.email });
+        const row = subs[0];
+        if (!row) return;
+        if (row.active_device_id && row.active_device_id !== deviceId) {
+          toast({ title: t('auth.deviceSignedOut'), variant: 'destructive' });
+          logout(false);
+        } else if (row.active_device_id !== deviceId) {
+          await base44.entities.Subscriber.update(row.id, { active_device_id: deviceId });
+        }
+      } catch (error) {
+        // Device binding must never crash the app.
+        console.error('Device binding check failed:', error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user, t]);
+
   const logout = (redirectTo = true) => {
     setUser(null);
     setSubscriber(null);
@@ -148,8 +190,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    // Route to the custom in-app login page. AuthProvider lives outside the
+    // Router, so a full navigation is used instead of useNavigate.
+    window.location.assign('/login');
   };
 
   return (

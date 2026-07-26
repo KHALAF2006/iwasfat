@@ -1,78 +1,66 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { base44 } from "@/api/base44Client";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, LogIn } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { useT } from "@/i18n";
+import { useT, useLanguage } from "@/i18n";
 import { useToast } from "@/components/ui/use-toast";
+import PhoneStep from "@/components/onboarding/PhoneStep";
+import BirthDateStep, { computeAge } from "@/components/onboarding/BirthDateStep";
+import BodyHealthStep from "@/components/onboarding/BodyHealthStep";
+import SuccessScreen from "@/components/onboarding/SuccessScreen";
+import { DEFAULT_COUNTRY, composeE164, parseE164, validateNational } from "@/components/onboarding/countries";
 
-const calculateBMI = (weight, heightCm) => {
-  const heightM = heightCm / 100;
-  return +(weight / (heightM * heightM)).toFixed(1);
+const TOTAL_STEPS = 3;
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+const DEFAULT_BODY = {
+  full_name: "",
+  gender: "",
+  height_cm: 170,
+  current_weight: 85,
+  target_weight: 75,
+  activity_level: "",
+  has_chronic_diseases: false,
+  chronic_diseases_details: "",
 };
 
-// Devine formula — genuinely gender-aware ideal weight range.
-const calculateIdealWeight = (heightCm, gender) => {
-  const heightM = heightCm / 100;
-  const inches = heightCm / 2.54;
-  const base = gender === "female" ? 45.5 : 50;
-  const devine = inches > 60 ? base + 2.3 * (inches - 60) : base;
-  // Blend with the healthy BMI band so the range stays sensible for shorter/taller people.
-  const bmiMin = 18.5 * heightM * heightM;
-  const bmiMax = 24.9 * heightM * heightM;
-  const min = Math.max(bmiMin, devine - 5);
-  const max = Math.min(bmiMax, devine + 5);
-  return { min: +min.toFixed(1), max: +max.toFixed(1) };
-};
-
-// Mifflin-St Jeor TDEE minus a safe deficit, with hard calorie floors.
-const calculateDailyCalories = (weight, heightCm, age, gender, activityLevel) => {
-  let bmr;
-  if (gender === "male") {
-    bmr = 10 * weight + 6.25 * heightCm - 5 * age + 5;
-  } else {
-    bmr = 10 * weight + 6.25 * heightCm - 5 * age - 161;
-  }
-  const multipliers = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
-  const tdee = bmr * (multipliers[activityLevel] || 1.2);
-  const deficit = Math.min(750, Math.max(250, tdee * 0.2)); // cap the deficit between 250–750 kcal
-  const floor = gender === "male" ? 1500 : 1200; // never go below a medically safe minimum
-  return Math.round(Math.max(floor, tdee - deficit));
-};
-
+/**
+ * Profile onboarding wizard (route /register).
+ *
+ * Step 1: Gulf & Arab phone capture with per-country validation (E.164).
+ * Step 2: custom year-first birth-date picker with live age / age-group.
+ * Step 3: name, gender, body metrics (steppers + live BMI), activity, chronic.
+ *
+ * Submission ALWAYS goes through the backend function `completeOnboarding`
+ * (upsert + 7-day trial + group auto-assignment live server-side). Returning
+ * users are prefilled from their existing Subscriber row and submit through
+ * the same function.
+ */
 export default function Register() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoadingAuth, authChecked, navigateToLogin, refreshSubscriber } = useAuth();
   const { toast } = useToast();
   const t = useT();
+  const { isRTL } = useLanguage();
 
-  const [loading, setLoading] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
-  const [existingSubscriber, setExistingSubscriber] = useState(null); // update mode when found
+  const [existingSubscriber, setExistingSubscriber] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState(null); // { group_name, trial_ends_at } on success
+
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    full_name: "",
-    gender: "",
-    birth_date: "",
-    height_cm: "",
-    current_weight: "",
-    target_weight: "",
-    activity_level: "",
-    has_chronic_diseases: false,
-    chronic_diseases_details: "",
-    phone: "",
-  });
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const [national, setNational] = useState("");
+  const [birth, setBirth] = useState({ year: null, month: null, day: null });
+  const [body, setBody] = useState(DEFAULT_BODY);
 
-  const updateForm = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const updateBody = (key, value) => setBody((prev) => ({ ...prev, [key]: value }));
 
-  // On mount: if the user already has a Subscriber record, enter update mode
-  // instead of creating a duplicate row.
+  // Returning users: prefill from the existing Subscriber row. Updates still
+  // go through completeOnboarding (it upserts; no new trial is granted).
   useEffect(() => {
     const loadExisting = async () => {
       if (!isAuthenticated || !user?.email) {
@@ -84,22 +72,31 @@ export default function Register() {
         const existing = subs[0];
         if (existing) {
           setExistingSubscriber(existing);
-          setForm({
+          setBody({
             full_name: existing.full_name || "",
             gender: existing.gender || "",
-            birth_date: existing.birth_date || "",
-            height_cm: existing.height_cm ?? "",
-            current_weight: existing.current_weight ?? "",
-            target_weight: existing.target_weight ?? "",
+            height_cm: existing.height_cm ?? DEFAULT_BODY.height_cm,
+            current_weight: existing.current_weight ?? DEFAULT_BODY.current_weight,
+            target_weight: existing.target_weight ?? DEFAULT_BODY.target_weight,
             activity_level: existing.activity_level || "",
             has_chronic_diseases: !!existing.has_chronic_diseases,
             chronic_diseases_details: existing.chronic_diseases_details || "",
-            phone: existing.phone || "",
           });
+          const parsed = parseE164(existing.phone);
+          if (parsed) {
+            setCountry(parsed.country);
+            setNational(parsed.national);
+          } else if (existing.phone) {
+            setNational(String(existing.phone).replace(/\D/g, "").replace(/^0+/, ""));
+          }
+          if (existing.birth_date) {
+            const [y, m, d] = String(existing.birth_date).split("-").map(Number);
+            if (y && m && d) setBirth({ year: y, month: m, day: d });
+          }
         }
       } catch (error) {
         console.error("Failed to load existing subscriber:", error);
-        toast({ title: t("register.errorLoad"), variant: "destructive" });
+        toast({ title: t("onboarding.errors.loadFailed"), variant: "destructive" });
       } finally {
         setCheckingExisting(false);
       }
@@ -107,61 +104,79 @@ export default function Register() {
     if (authChecked && !isLoadingAuth) {
       loadExisting();
     }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, isLoadingAuth, isAuthenticated, user?.email]);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const weight = parseFloat(form.current_weight);
-      const height = parseFloat(form.height_cm);
-      const birthYear = new Date(form.birth_date).getFullYear();
-      const age = new Date().getFullYear() - birthYear;
-      const bmi = calculateBMI(weight, height);
-      const idealWeight = calculateIdealWeight(height, form.gender);
-      const dailyCalories = calculateDailyCalories(weight, height, age, form.gender, form.activity_level);
+  // ── per-step validation ─────────────────────────────────────────────────
+  const phoneCheck = validateNational(country, national);
+  const birthComplete = !!(birth.year && birth.month && birth.day);
+  const age = birthComplete ? computeAge(birth.year, birth.month, birth.day) : null;
+  const birthValid = birthComplete && age >= 10 && age <= 100;
+  const bodyValid =
+    body.full_name.trim().length >= 2 &&
+    !!body.gender &&
+    !!body.activity_level &&
+    Number(body.height_cm) >= 100 &&
+    Number(body.current_weight) >= 30 &&
+    Number(body.target_weight) >= 30;
 
-      const subscriberData = {
-        ...form,
-        email: user.email, // always the authenticated account's email
-        height_cm: height,
-        current_weight: weight,
-        target_weight: parseFloat(form.target_weight),
-        bmi,
-        ideal_weight_min: idealWeight.min,
-        ideal_weight_max: idealWeight.max,
-        daily_calorie_target: dailyCalories,
+  const canNext = step === 1 ? phoneCheck.ok : step === 2 ? birthValid : bodyValid;
+
+  // ── submit ──────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!canNext || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        full_name: body.full_name.trim(),
+        gender: body.gender,
+        birth_date: `${birth.year}-${pad2(birth.month)}-${pad2(birth.day)}`,
+        height_cm: Number(body.height_cm),
+        current_weight: Number(body.current_weight),
+        target_weight: Number(body.target_weight),
+        activity_level: body.activity_level,
+        has_chronic_diseases: !!body.has_chronic_diseases,
+        chronic_diseases_details: body.has_chronic_diseases ? body.chronic_diseases_details.trim() : "",
+        phone: composeE164(country, national),
       };
 
-      if (existingSubscriber) {
-        await base44.entities.Subscriber.update(existingSubscriber.id, subscriberData);
-      } else {
-        // NOTE: 'trial' is a client-side placeholder — server-side billing
-        // (Stripe webhooks + sweepTrials) owns the lifecycle from here on.
-        // Stamp trial_ends_at so sweepTrials doesn't have to guess for new rows.
-        const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-        await base44.entities.Subscriber.create({ ...subscriberData, subscription_status: "trial", trial_ends_at: trialEndsAt });
+      const res = await base44.functions.invoke("completeOnboarding", payload);
+      const out = res?.data && typeof res.data === "object" && "ok" in res.data ? res.data : res;
+
+      if (!out || out.ok !== true) {
+        const code = out?.code;
+        const message =
+          code === "INVALID_PHONE"
+            ? t("onboarding.errors.invalidPhone")
+            : code === "INVALID_DATA"
+              ? t("onboarding.errors.invalidData")
+              : t("onboarding.errors.serverError");
+        toast({ title: message, variant: "destructive" });
+        return;
       }
 
-      // Save subscriber info on the user
-      await base44.auth.updateMe({
-        subscriber_registered: true,
-        subscriber_name: form.full_name,
-      });
-
+      // Mirror the registration flag on the user record (best effort — the
+      // backend function already owns the Subscriber row itself).
+      try {
+        await base44.auth.updateMe({
+          subscriber_registered: true,
+          subscriber_name: payload.full_name,
+        });
+      } catch (error) {
+        console.warn("updateMe after onboarding failed:", error);
+      }
       await refreshSubscriber();
 
-      toast({ title: existingSubscriber ? t("register.successUpdate") : t("register.successCreate") });
-      navigate("/dashboard");
+      setResult({ group_name: out.group_name ?? null, trial_ends_at: out.trial_ends_at ?? null });
     } catch (error) {
-      console.error("Registration failed:", error);
-      toast({ title: t("register.errorSave"), variant: "destructive" });
+      console.error("Onboarding failed:", error);
+      toast({ title: t("onboarding.errors.serverError"), variant: "destructive" });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  // Anonymous visitors: friendly prompt to sign in — no unhandled rejections.
+  // ── anonymous visitors ──────────────────────────────────────────────────
   if (authChecked && !isLoadingAuth && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -188,165 +203,116 @@ export default function Register() {
     );
   }
 
-  const heightNum = parseFloat(form.height_cm);
-  const weightNum = parseFloat(form.current_weight);
-  const targetNum = parseFloat(form.target_weight);
-  const hasBodyData = !Number.isNaN(heightNum) && !Number.isNaN(weightNum);
+  // ── success screen ──────────────────────────────────────────────────────
+  if (result) {
+    return (
+      <SuccessScreen
+        groupName={result.group_name}
+        trialEndsAt={result.trial_ends_at}
+        onContinue={() => navigate("/dashboard")}
+      />
+    );
+  }
+
+  const stepTitles = [
+    t("onboarding.steps.phone"),
+    t("onboarding.steps.birth"),
+    t("onboarding.steps.body"),
+  ];
+  const BackIcon = isRTL ? ChevronRight : ChevronLeft;
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {existingSubscriber ? t("register.titleUpdate") : t("register.titleNew")}
-          </h1>
-          <p className="text-muted-foreground">{t("register.subtitle")}</p>
-          <div className="flex justify-center gap-2 mt-4">
-            {[1, 2, 3].map(s => (
-              <div key={s} className={`h-1.5 rounded-full transition-all ${s === step ? 'w-8 bg-primary' : s < step ? 'w-8 bg-primary/40' : 'w-8 bg-border'}`} />
-            ))}
+    <div className="h-screen bg-background flex flex-col">
+      {/* Sticky header: wizard title, progress indicator, step title */}
+      <header className="shrink-0 border-b border-border/50 bg-background">
+        <div className="w-full max-w-lg mx-auto px-4 pt-5 pb-4">
+          <div className="text-center mb-4">
+            <h1 className="text-xl font-bold text-foreground">
+              {existingSubscriber ? t("onboarding.titleUpdate") : t("onboarding.title")}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-1">{t("onboarding.subtitle")}</p>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex gap-1.5 flex-1">
+              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${i < step ? "bg-primary" : "bg-secondary"}`}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+              {t("onboarding.stepOf", { step, total: TOTAL_STEPS })}
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-foreground">{stepTitles[step - 1]}</p>
+        </div>
+      </header>
+
+      {/* Scrollable body. Plain keyed div per step — no enter/exit animations
+          gating visibility (paused animations can hide content). */}
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="w-full max-w-lg mx-auto px-4 py-6">
+          <div key={step}>
+            {step === 1 && (
+              <PhoneStep
+                country={country}
+                onCountryChange={setCountry}
+                national={national}
+                onNationalChange={setNational}
+              />
+            )}
+            {step === 2 && <BirthDateStep value={birth} onChange={setBirth} />}
+            {step === 3 && <BodyHealthStep form={body} onChange={updateBody} />}
           </div>
         </div>
+      </main>
 
-        <div className="bg-card rounded-2xl border border-border/50 p-8 shadow-lg">
-          {step === 1 && (
-            <div className="space-y-5">
-              <div>
-                <Label>{t("register.fullName")}</Label>
-                <Input value={form.full_name} onChange={e => updateForm("full_name", e.target.value)} placeholder={t("register.fullNamePlaceholder")} className="mt-1.5" />
-              </div>
-              <div>
-                <Label>{t("register.email")}</Label>
-                {/* Email always comes from the authenticated account — read-only */}
-                <Input type="email" value={user?.email || ""} readOnly disabled className="mt-1.5 opacity-70" dir="ltr" />
-              </div>
-              <div>
-                <Label>{t("register.phone")}</Label>
-                <Input value={form.phone} onChange={e => updateForm("phone", e.target.value)} placeholder={t("register.phonePlaceholder")} className="mt-1.5" dir="ltr" />
-              </div>
-              <div>
-                <Label>{t("register.gender")}</Label>
-                <Select value={form.gender} onValueChange={v => updateForm("gender", v)}>
-                  <SelectTrigger className="mt-1.5"><SelectValue placeholder={t("register.genderPlaceholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">{t("register.male")}</SelectItem>
-                    <SelectItem value="female">{t("register.female")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t("register.birthDate")}</Label>
-                <Input type="date" value={form.birth_date} onChange={e => updateForm("birth_date", e.target.value)} className="mt-1.5" dir="ltr" />
-              </div>
-              <Button onClick={() => setStep(2)} className="w-full bg-primary text-primary-foreground py-5 gap-2" disabled={!form.full_name || !form.gender || !form.birth_date}>
-                {t("common.next")} <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
-              </Button>
-            </div>
+      {/* Sticky footer: back / next (or submit) — always visible */}
+      <footer className="shrink-0 border-t border-border bg-background">
+        <div className="w-full max-w-lg mx-auto px-4 py-3 flex gap-2">
+          {step > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              disabled={submitting}
+              className="gap-1 min-h-[48px]"
+            >
+              <BackIcon className="w-4 h-4" />
+              {t("onboarding.back")}
+            </Button>
           )}
-
-          {step === 2 && (
-            <div className="space-y-5">
-              <div>
-                <Label>{t("register.height")}</Label>
-                <Input type="number" value={form.height_cm} onChange={e => updateForm("height_cm", e.target.value)} placeholder="170" className="mt-1.5" dir="ltr" />
-              </div>
-              <div>
-                <Label>{t("register.currentWeight")}</Label>
-                <Input type="number" value={form.current_weight} onChange={e => updateForm("current_weight", e.target.value)} placeholder="85" className="mt-1.5" dir="ltr" />
-              </div>
-              <div>
-                <Label>{t("register.targetWeight")}</Label>
-                <Input type="number" value={form.target_weight} onChange={e => updateForm("target_weight", e.target.value)} placeholder="70" className="mt-1.5" dir="ltr" />
-              </div>
-              <div>
-                <Label>{t("register.activityLevel")}</Label>
-                <Select value={form.activity_level} onValueChange={v => updateForm("activity_level", v)}>
-                  <SelectTrigger className="mt-1.5"><SelectValue placeholder={t("register.activityPlaceholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sedentary">{t("register.activity.sedentary")}</SelectItem>
-                    <SelectItem value="light">{t("register.activity.light")}</SelectItem>
-                    <SelectItem value="moderate">{t("register.activity.moderate")}</SelectItem>
-                    <SelectItem value="active">{t("register.activity.active")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 py-5">{t("common.previous")}</Button>
-                <Button onClick={() => setStep(3)} className="flex-1 bg-primary text-primary-foreground py-5 gap-2" disabled={!form.height_cm || !form.current_weight || !form.target_weight || !form.activity_level}>
-                  {t("common.next")} <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <Label>{t("register.chronicQuestion")}</Label>
-                <Switch checked={form.has_chronic_diseases} onCheckedChange={v => updateForm("has_chronic_diseases", v)} />
-              </div>
-              {form.has_chronic_diseases && (
-                <div>
-                  <Label>{t("register.chronicDetails")}</Label>
-                  <Textarea value={form.chronic_diseases_details} onChange={e => updateForm("chronic_diseases_details", e.target.value)} placeholder={t("register.chronicPlaceholder")} className="mt-1.5" />
-                </div>
+          {step < TOTAL_STEPS ? (
+            <Button
+              type="button"
+              onClick={() => setStep((s) => Math.min(TOTAL_STEPS, s + 1))}
+              disabled={!canNext}
+              className="flex-1 gap-1 min-h-[48px]"
+            >
+              {t("onboarding.next")}
+              <NextIcon className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canNext || submitting}
+              className="flex-1 gap-1 min-h-[48px] bg-accent hover:bg-accent/90 text-white"
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {existingSubscriber ? t("onboarding.updateSubmit") : t("onboarding.submit")}
+                  <NextIcon className="w-4 h-4" />
+                </>
               )}
-
-              {hasBodyData && (
-                <div className="bg-secondary/50 rounded-xl p-5 space-y-3">
-                  <h3 className="font-semibold text-foreground">{t("register.summary")}</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">{t("register.bmi")}</p>
-                      <p className="font-bold text-foreground text-lg">{calculateBMI(weightNum, heightNum)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">{t("register.idealWeight")}</p>
-                      <p className="font-bold text-foreground text-lg" dir="ltr">
-                        {calculateIdealWeight(heightNum, form.gender).min} - {calculateIdealWeight(heightNum, form.gender).max} {t("common.kg")}
-                      </p>
-                    </div>
-                    {!Number.isNaN(targetNum) && (
-                      <>
-                        <div>
-                          <p className="text-muted-foreground">{t("register.lossGoal")}</p>
-                          <p className="font-bold text-accent text-lg">{(weightNum - targetNum).toFixed(1)} {t("common.kg")}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">{t("register.approxDuration")}</p>
-                          <p className="font-bold text-foreground text-lg">{Math.max(0, Math.ceil((weightNum - targetNum) / 0.75))} {t("common.week")}</p>
-                        </div>
-                      </>
-                    )}
-                    {form.birth_date && (
-                      <div className="col-span-2 border-t border-border/50 pt-3">
-                        <p className="text-muted-foreground">{t("register.dailyCalories")}</p>
-                        <p className="font-bold text-accent text-lg" dir="ltr">
-                          {calculateDailyCalories(weightNum, heightNum, Math.max(10, new Date().getFullYear() - new Date(form.birth_date).getFullYear()), form.gender, form.activity_level)} {t("common.cal")}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{t("register.dailyCaloriesNote")}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Medical disclaimer — guidance, not a prescription */}
-              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
-                <p className="text-sm font-semibold text-foreground mb-1">{t("register.disclaimerTitle")}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{t("register.disclaimer")}</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1 py-5">{t("common.previous")}</Button>
-                <Button onClick={handleSubmit} disabled={loading} className="flex-1 bg-accent hover:bg-accent/90 text-white py-5 gap-2">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{existingSubscriber ? t("register.saveChanges") : t("register.createAccount")} <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" /></>}
-                </Button>
-              </div>
-            </div>
+            </Button>
           )}
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
