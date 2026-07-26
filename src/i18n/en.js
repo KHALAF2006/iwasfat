@@ -721,4 +721,11 @@ export default {
     connectHint: "Telegram will open — press Start to finish linking",
     connectError: "Could not create a connect link. Please try again.",
   },
+
+  contentViewer: {
+    openFile: "Open file",
+    download: "Download",
+    unavailable: "Content is not available right now",
+    close: "Close",
+  },
 };

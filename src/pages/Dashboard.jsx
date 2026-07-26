@@ -109,6 +109,11 @@ export default function Dashboard() {
     { key: "dinner", emoji: "🌙", name: dailyPlan.dinner_meal_name, cal: dailyPlan.dinner_calories, done: dailyPlan.dinner_completed },
   ].filter(m => m.name) : [];
 
+  // The quick-add cards must stay visible until the day's meals are all
+  // completed — including when a DailyMealPlan row exists only for water
+  // tracking (plan row present, but every meal slot empty).
+  const allMealsCompleted = planMeals.length > 0 && planMeals.every(m => m.done);
+
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
       {/* Header */}
@@ -179,7 +184,7 @@ export default function Dashboard() {
             {t("dashboard.details")} <ArrowLeft className="w-3 h-3 rtl:rotate-0 ltr:rotate-180" />
           </Link>
         </div>
-        {dailyPlan ? (
+        {planMeals.length > 0 && (
           <div className="space-y-2">
             {planMeals.map(m => (
               <Link key={m.key} to={`/meals?log=${m.key}`} className="block">
@@ -196,8 +201,9 @@ export default function Dashboard() {
               </Link>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-3">
+        )}
+        {!allMealsCompleted && (
+          <div className={`grid grid-cols-4 gap-3 ${planMeals.length > 0 ? "mt-4" : ""}`}>
             {["breakfast", "lunch", "dinner", "snack"].map(type => {
               const logged = todayLogs.find(l => l.meal_type === type);
               return (

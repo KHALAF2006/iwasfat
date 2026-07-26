@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Play, Image, FileText, Clock, BookOpen } from "lucide-react";
 import { useT } from "@/i18n";
+import ContentViewer from "@/components/content/ContentViewer";
 
 const CATEGORY_KEYS = ["all", "nutrition", "exercise", "shopping", "appetite", "motivation"];
 
@@ -15,6 +16,7 @@ const TYPE_ICONS = {
 
 export default function Content() {
   const [category, setCategory] = useState("all");
+  const [selectedItem, setSelectedItem] = useState(null);
   const t = useT();
 
   const { data: content = [] } = useQuery({
@@ -51,7 +53,20 @@ export default function Content() {
         {filtered.length > 0 ? filtered.map(item => {
           const Icon = TYPE_ICONS[item.content_type] || FileText;
           return (
-            <div key={item.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden hover:shadow-md transition-shadow">
+            <div
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              aria-label={item.title}
+              onClick={() => setSelectedItem(item)}
+              onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedItem(item);
+                }
+              }}
+              className="bg-card rounded-2xl border border-border/50 overflow-hidden hover:shadow-md transition-shadow cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               {(item.thumbnail || item.file_url) && item.content_type !== "pdf" && (
                 <div className="relative aspect-video bg-secondary">
                   <img src={item.thumbnail || item.file_url} alt={item.title} className="w-full h-full object-cover" />
@@ -93,6 +108,12 @@ export default function Content() {
           </div>
         )}
       </div>
+
+      <ContentViewer
+        item={selectedItem}
+        open={!!selectedItem}
+        onOpenChange={open => { if (!open) setSelectedItem(null); }}
+      />
     </div>
   );
 }

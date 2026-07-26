@@ -49,11 +49,17 @@ export default function ShoppingList() {
     queryKey: ['shoppingList', subscriber?.id],
     queryFn: async () => {
       if (!subscriber) return null;
-      const lists = await base44.entities.ShoppingList.filter({
-        subscriber_id: subscriber.id,
-        is_active: true
-      });
-      return lists[0] || null;
+      // The AI regenerate flow (generateShoppingList) rewrites the list row and
+      // may not set is_active=true on the result. Hard-filtering on is_active
+      // here then returns no row and the whole list UI (including the PDF/share
+      // buttons) is replaced by the empty state. So fetch the subscriber's
+      // lists newest-first and prefer an active one, falling back to the most
+      // recent list regardless of its is_active flag.
+      const lists = await base44.entities.ShoppingList.filter(
+        { subscriber_id: subscriber.id },
+        '-created_date'
+      );
+      return lists.find(l => l.is_active) || lists[0] || null;
     },
     enabled: !!subscriber,
   });
@@ -61,7 +67,7 @@ export default function ShoppingList() {
   const toggleItemMutation = useMutation({
     mutationFn: async (itemIndex) => {
       if (!shoppingList) return;
-      const updatedItems = shoppingList.items.map((item, idx) =>
+      const updatedItems = (shoppingList.items || []).map((item, idx) =>
         idx === itemIndex ? { ...item, is_checked: !item.is_checked } : item
       );
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
@@ -73,7 +79,7 @@ export default function ShoppingList() {
   const deleteItemMutation = useMutation({
     mutationFn: async (itemIndex) => {
       if (!shoppingList) return;
-      const updatedItems = shoppingList.items.filter((_, idx) => idx !== itemIndex);
+      const updatedItems = (shoppingList.items || []).filter((_, idx) => idx !== itemIndex);
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
@@ -84,7 +90,7 @@ export default function ShoppingList() {
     mutationFn: async () => {
       if (!shoppingList || !newItem.item_name || !newItem.quantity) return;
       const updatedItems = [
-        ...shoppingList.items,
+        ...(shoppingList.items || []),
         { category: newItem.category, item_name: newItem.item_name, quantity: newItem.quantity, is_checked: false, notes: '' }
       ];
       await base44.entities.ShoppingList.update(shoppingList.id, { items: updatedItems });
@@ -169,7 +175,12 @@ export default function ShoppingList() {
     );
   }
 
-  const groupedItems = shoppingList.items.reduce((acc, item, idx) => {
+  // Defensive: a regenerated list may briefly arrive without its items array;
+  // never let a missing/null items field crash the render (which would also
+  // wipe out the export/share buttons).
+  const items = shoppingList.items || [];
+
+  const groupedItems = items.reduce((acc, item, idx) => {
     const cat = item.category || 'other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push({ ...item, _index: idx });
@@ -180,8 +191,8 @@ export default function ShoppingList() {
     (a, b) => (CATEGORY_ORDER[a] || 999) - (CATEGORY_ORDER[b] || 999)
   );
 
-  const checkedCount = shoppingList.items.filter(i => i.is_checked).length;
-  const totalCount = shoppingList.items.length;
+  const checkedCount = items.filter(i => i.is_checked).length;
+  const totalCount = items.length;
   const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
   return (

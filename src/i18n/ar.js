@@ -720,4 +720,11 @@ export default {
     connectHint: "سيفتح تيليجرام لديك — اضغط Start لإتمام الربط",
     connectError: "تعذر إنشاء رابط الربط. حاول مرة أخرى.",
   },
+
+  contentViewer: {
+    openFile: "فتح الملف",
+    download: "تحميل",
+    unavailable: "المحتوى غير متاح حالياً",
+    close: "إغلاق",
+  },
 };

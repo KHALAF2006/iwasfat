@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, ChevronRight, ChevronLeft, PenLine } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { useT, useLanguage } from "@/i18n";
 import { evaluateFoodForProfile } from "@/lib/nutrition/engine";
@@ -207,7 +207,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
   const slide = {
     initial: (dir) => ({ opacity: 0, x: (isRTL ? -1 : 1) * dir * 40 }),
     animate: { opacity: 1, x: 0 },
-    exit: (dir) => ({ opacity: 0, x: (isRTL ? -1 : 1) * dir * -40 }),
   };
 
   const BackIcon = isRTL ? ChevronLeft : ChevronRight;
@@ -242,16 +241,19 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
           </p>
 
           <div className="min-h-[280px]">
-            <AnimatePresence mode="wait" custom={direction} initial={false}>
-              <motion.div
-                key={step}
-                custom={direction}
-                variants={slide}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
+            {/* Direct keyed mount: step content must render synchronously with
+                the `step` state. Do NOT wrap this in AnimatePresence mode="wait"
+                with dynamic exit variants — a stuck exit animation in
+                framer-motion 11 leaves the previous step mounted forever and the
+                incoming step never mounts (the production bug this fixes). */}
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={slide}
+              initial="initial"
+              animate="animate"
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
                 {step === 1 && (
                   <MealTypeSelector
                     selectedType={mealType}
@@ -457,7 +459,6 @@ export default function SmartMealWizard({ open, onClose, subscriber, initialMeal
                   </div>
                 )}
               </motion.div>
-            </AnimatePresence>
           </div>
 
           {/* Footer navigation */}
