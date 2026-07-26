@@ -1,17 +1,20 @@
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft, Bell, ShoppingCart, Dumbbell, Settings, Camera, Plus } from "lucide-react";
+import { Utensils, Video, Users, BarChart3, Droplets, ArrowLeft, Bell, ShoppingCart, Dumbbell, Settings, Camera, Plus, ShieldCheck } from "lucide-react";
 import CalorieRing from "../components/app/CalorieRing";
 import StatsPanel from "../components/app/StatsPanel";
 import moment from "moment";
 import { useT, useLanguage } from "@/i18n";
+import { useAuth } from "@/lib/AuthContext";
 import { suggestDailyTargets, calculateWaterGoal } from "@/lib/nutrition/engine";
 import { buildEngineProfile } from "../components/meals/conditions";
 
 export default function Dashboard() {
   const t = useT();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const queryClient = useQueryClient();
 
   const { data: subscriber } = useQuery({
@@ -125,6 +128,14 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm">{dayName}، {dateStr}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Owner shortcut: always visible on the home screen, admins only */}
+          {isAdmin && (
+            <Link to="/admin" title={t("nav.adminPanel")}>
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors">
+                <ShieldCheck className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </Link>
+          )}
           <Link to="/notifications" className="relative">
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
               <Bell className="w-5 h-5 text-muted-foreground" />

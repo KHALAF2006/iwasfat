@@ -43,6 +43,8 @@ export default {
     profile: "Profile",
     notifications: "Notifications",
     settings: "Settings",
+    adminPanel: "Admin Panel",
+    adminPanelDesc: "Manage content, subscribers & channels",
   },
 
   language: {

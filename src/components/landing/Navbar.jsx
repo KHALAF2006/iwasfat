@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useT } from "@/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -9,8 +9,9 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, navigateToLogin } = useAuth();
+  const { user, isAuthenticated, navigateToLogin } = useAuth();
   const t = useT();
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -56,11 +57,21 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           <LanguageSwitcher className={scrolled ? "text-foreground/70" : "text-white/80"} />
           {isAuthenticated ? (
-            <Link to="/dashboard">
-              <Button variant="ghost" size="sm" className={scrolled ? "" : "text-white hover:bg-white/10"}>
-                {t("nav.home")}
-              </Button>
-            </Link>
+            <>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm" className={`gap-1.5 ${scrolled ? "" : "text-white hover:bg-white/10"}`}>
+                    <ShieldCheck className="w-4 h-4" />
+                    {t("nav.adminPanel")}
+                  </Button>
+                </Link>
+              )}
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm" className={scrolled ? "" : "text-white hover:bg-white/10"}>
+                  {t("nav.home")}
+                </Button>
+              </Link>
+            </>
           ) : (
             <Button
               variant="ghost"
@@ -104,9 +115,19 @@ export default function Navbar() {
           <LanguageSwitcher className="text-foreground/70" />
           <div className="flex gap-3 pt-2">
             {isAuthenticated ? (
-              <Link to="/dashboard" className="flex-1">
-                <Button variant="outline" size="sm" className="w-full">{t("nav.home")}</Button>
-              </Link>
+              <>
+                {isAdmin && (
+                  <Link to="/admin" className="flex-1" onClick={() => setOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full gap-1.5">
+                      <ShieldCheck className="w-4 h-4" />
+                      {t("nav.adminPanel")}
+                    </Button>
+                  </Link>
+                )}
+                <Link to="/dashboard" className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">{t("nav.home")}</Button>
+                </Link>
+              </>
             ) : (
               <Button
                 variant="outline"

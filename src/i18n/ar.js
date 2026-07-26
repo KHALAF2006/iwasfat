@@ -43,6 +43,8 @@ export default {
     profile: "الملف الشخصي",
     notifications: "الإشعارات",
     settings: "الإعدادات",
+    adminPanel: "لوحة التحكم",
+    adminPanelDesc: "إدارة المحتوى والمشتركين والقنوات",
   },
 
   language: {

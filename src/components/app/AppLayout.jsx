@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { Home, Utensils, ShoppingCart, Camera, BarChart3, BookOpen, Users, Dumbbell, Menu, X } from "lucide-react";
+import { Home, Utensils, ShoppingCart, Camera, BarChart3, BookOpen, Users, Dumbbell, Menu, X, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useT } from "@/i18n";
@@ -29,8 +29,9 @@ const NAV_CONFIG = [
 export default function AppLayout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { subscriber, isAuthenticated, authChecked } = useAuth();
+  const { user, subscriber, isAuthenticated, authChecked } = useAuth();
   const t = useT();
+  const isAdmin = user?.role === "admin";
 
   const navItems = NAV_CONFIG.map(item => ({
     ...item,
@@ -61,6 +62,20 @@ export default function AppLayout() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+            {/* Owner entry: pinned, visually distinct — admins only */}
+            {isAdmin && (
+              <Link to="/admin" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 p-4 mb-5 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all">
+                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base">{t("nav.adminPanel")}</p>
+                  <p className="text-xs opacity-80">{t("nav.adminPanelDesc")}</p>
+                </div>
+                <ArrowLeft className="w-5 h-5 shrink-0 rtl:rotate-0 ltr:rotate-180" />
+              </Link>
+            )}
             <div className="grid grid-cols-3 gap-4">
               {navItems.map(item => {
                 const isActive = location.pathname === item.path;
