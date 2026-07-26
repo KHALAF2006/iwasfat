@@ -3,8 +3,18 @@
 // Probed live against the app backend — see project notes.
 import { appParams } from '@/lib/app-params';
 
+// In production the app and its API share one origin (the *.base44.app host
+// serves both). appParams.appBaseUrl can be null there (no
+// VITE_BASE44_APP_BASE_URL baked in, nothing stored), which previously built
+// broken URLs like "null/api/apps/..." and surfaced as a generic register
+// error. Fall back to the page origin — same behaviour as the SDK's
+// serverUrl: '' default.
+const apiBase =
+  appParams.appBaseUrl ||
+  (typeof window !== 'undefined' ? window.location.origin : '');
+
 const authUrl = (path) =>
-  `${appParams.appBaseUrl}/api/apps/${appParams.appId}/auth/${path}`;
+  `${apiBase}/api/apps/${appParams.appId}/auth/${path}`;
 
 /**
  * POST JSON to a Base44 auth endpoint.
