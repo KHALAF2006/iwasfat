@@ -322,6 +322,7 @@ export default {
     exporting: "جارٍ التصدير...",
     exportDone: "تم تنزيل الملف ✅",
     exportFailed: "تعذر التصدير، حاول مرة أخرى",
+    footer: "تطبيق وصفتي — نظامك الغذائي الذكي 🌿",
   },
 
   content: {

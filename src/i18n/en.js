@@ -322,6 +322,7 @@ export default {
     exporting: "Exporting...",
     exportDone: "File downloaded ✅",
     exportFailed: "Export failed, please retry",
+    footer: "iWasFat — your smart nutrition companion 🌿",
   },
 
   content: {

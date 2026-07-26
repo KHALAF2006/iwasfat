@@ -16,7 +16,14 @@ const resolvePath = (obj, path) => {
 
 const interpolate = (str, vars) => {
   if (!vars || typeof str !== 'string') return str;
-  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => (vars[k] != null ? vars[k] : `{{${k}}}`));
+  // Wrap every interpolated value in Unicode First-Strong-Isolate … Pop
+  // Isolate (⁦…⁩). Latin values (names like "khalaf", emails, dates)
+  // embedded in Arabic sentences otherwise break bidi ordering and render
+  // as garbled mixed text.
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => {
+    const v = vars[k] != null ? String(vars[k]) : `{{${k}}}`;
+    return `⁦${v}⁩`;
+  });
 };
 
 export function LanguageProvider({ children }) {

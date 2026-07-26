@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,6 @@ export default function ShoppingList() {
   const [generating, setGenerating] = useState(false);
   // null | 'pdf' | 'image' — which client-side export is currently running.
   const [exporting, setExporting] = useState(null);
-  const exportRef = useRef(null);
   const queryClient = useQueryClient();
   const t = useT();
   const { language } = useLanguage();
@@ -134,19 +133,38 @@ export default function ShoppingList() {
     }
   };
 
-  // Client-side export: renders the live list DOM via html2canvas, so the
-  // output preserves exactly what the user sees — Arabic text, RTL layout,
-  // and the current language (unlike the old backend exportShoppingPDF,
-  // which produced transliterated English gibberish).
+  // Client-side export: the list is rendered manually on a <canvas> (see
+  // src/lib/shopping-export.js), which uses the browser's native text
+  // shaping — Arabic headers and RTL layout export pixel-perfect, unlike
+  // html2canvas which garbled Arabic ligatures.
   const handleExport = async (kind) => {
-    if (!shoppingList || !exportRef.current) return;
+    if (!shoppingList || items.length === 0) return;
     setExporting(kind);
     try {
       const base = `${t('shopping.filePrefix')}-${shoppingList.week_start_date}`;
+      const exportData = {
+        title: t('shopping.title'),
+        subtitle: `${t('shopping.weekLabel')} ${format(weekStart, 'd MMMM', { locale: dateLocale })} — ${format(addDays(weekStart, 6), 'd MMMM', { locale: dateLocale })}`,
+        shoppedLabel: t('shopping.shopped'),
+        ofLabel: t('shopping.of'),
+        done: checkedCount,
+        total: totalCount,
+        progress,
+        categories: sortedCategories.map((key) => ({
+          key,
+          label: t(`shopping.categories.${key}`),
+          items: groupedItems[key].map((i) => ({
+            name: i.item_name,
+            quantity: i.quantity,
+            checked: !!i.is_checked,
+          })),
+        })),
+        footer: t('shoppingExport.footer'),
+      };
       if (kind === 'pdf') {
-        await exportListAsPDF(exportRef.current, `${base}.pdf`);
+        await exportListAsPDF(exportData, `${base}.pdf`);
       } else {
-        await exportListAsImage(exportRef.current, `${base}.png`);
+        await exportListAsImage(exportData, `${base}.png`);
       }
       toast({ title: t('shoppingExport.exportDone') });
     } catch (err) {
@@ -276,9 +294,8 @@ export default function ShoppingList() {
         </Button>
       </div>
 
-      {/* الفئات والعناصر — this container is what gets exported as image/PDF.
-          It always shows all items (no collapsed/truncated content on this page). */}
-      <div ref={exportRef} className="space-y-4 bg-background p-2 rounded-xl">
+      {/* الفئات والعناصر */}
+      <div className="space-y-4 bg-background p-2 rounded-xl">
         {sortedCategories.map(categoryKey => (
           <Card key={categoryKey}>
             <CardHeader className="pb-3">

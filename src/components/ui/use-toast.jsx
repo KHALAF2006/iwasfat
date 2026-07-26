@@ -1,8 +1,11 @@
 // Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+// Standard limits: at most 3 toasts visible; dismissed toasts are removed
+// from the DOM 1s after closing (the old values — 20 toasts / 1,000,000ms —
+// let notifications pile up on screen for ~16 minutes).
+const TOAST_LIMIT = 3;
+const TOAST_REMOVE_DELAY = 1000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
